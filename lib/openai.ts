@@ -18,6 +18,13 @@ export class OpenAIError extends Error {
   }
 }
 
+export class AnalysisCancelledError extends Error {
+  constructor() {
+    super("ANALYSIS_CANCELLED");
+    this.name = "AnalysisCancelledError";
+  }
+}
+
 function getOutputText(payload: unknown) {
   const data = payload as { output_text?: string; output?: Array<{ content?: Array<{ text?: string }> }> };
   if (typeof data.output_text === "string" && data.output_text.trim()) return data.output_text;
@@ -31,6 +38,20 @@ function getUsage(payload: unknown): OpenAIUsage {
   return { inputTokens, outputTokens, totalTokens: usage?.total_tokens ?? inputTokens + outputTokens };
 }
 
+
+function normalizeReasoningEffort(model: string, requested?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh") {
+  if (!requested) return undefined;
+  // GPT-5 mini does not accept `none`; its lowest supported value is `minimal`.
+  if (model === "gpt-5-mini" || model.startsWith("gpt-5-mini-")) {
+    return requested === "none" ? "minimal" : requested === "xhigh" ? "high" : requested;
+  }
+  // GPT-5.4 mini/nano and newer 5.4 family accept `none`; `minimal` is not part of that family.
+  if (model.startsWith("gpt-5.4")) {
+    return requested === "minimal" ? "none" : requested;
+  }
+  return requested;
+}
+
 export async function callOpenAI(
   input: unknown,
   options?: {
@@ -39,18 +60,23 @@ export async function callOpenAI(
     maxOutputTokens?: number;
     jsonSchema?: JsonSchemaFormat;
     safetyIdentifier?: string;
+    signal?: AbortSignal;
+    reasoningEffort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh";
   },
 ): Promise<OpenAIResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new OpenAIError("OPENAI_API_KEY_MISSING", 503, "api_key_missing");
+  if (options?.signal?.aborted) throw new AnalysisCancelledError();
 
-  const model = options?.model || process.env.OPENAI_ANALYSIS_MODEL || "gpt-5.4-mini";
+  const model = options?.model || process.env.OPENAI_ANALYSIS_MODEL || "gpt-5.4-nano";
   const body: Record<string, unknown> = {
     model,
     instructions: options?.instructions,
     input,
-    max_output_tokens: options?.maxOutputTokens ?? 1200,
+    max_output_tokens: options?.maxOutputTokens ?? 700,
   };
+  const reasoningEffort = normalizeReasoningEffort(model, options?.reasoningEffort);
+  if (reasoningEffort) body.reasoning = { effort: reasoningEffort };
   if (options?.safetyIdentifier) body.safety_identifier = options.safetyIdentifier;
   if (options?.jsonSchema) {
     body.text = {
@@ -63,12 +89,21 @@ export async function callOpenAI(
     };
   }
 
-  const response = await fetch(OPENAI_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(OPENAI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal: options?.signal,
+    });
+  } catch (error) {
+    if (options?.signal?.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+      throw new AnalysisCancelledError();
+    }
+    throw error;
+  }
 
   const responseBody = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -76,6 +111,7 @@ export async function callOpenAI(
     throw new OpenAIError(error?.message || `OpenAI API 오류 (${response.status})`, response.status, error?.code, error?.type);
   }
 
+  if (options?.signal?.aborted) throw new AnalysisCancelledError();
   const text = getOutputText(responseBody);
   if (!text) throw new OpenAIError("AI 응답에서 텍스트를 찾지 못했습니다.", 502, "empty_response");
   return { text, model, usage: getUsage(responseBody) };

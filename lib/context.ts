@@ -5,7 +5,7 @@ export const RELATIONSHIPS = ["썸", "연인", "소개팅", "애매한 사이", 
 export type RelationshipType = (typeof RELATIONSHIPS)[number];
 
 export const AGE_RANGES = [
-  "10대 후반", "20대 초반", "20대 중반", "20대 후반", "30대 초반", "30대 후반", "40대", "50대 이상",
+  "10대 후반", "20대 초반", "20대 중반", "20대 후반", "30대 초반", "30대 중반", "30대 후반", "40대", "50대 이상",
 ] as const;
 
 export const GENDERS = ["남성", "여성", "선택 안 함"] as const;

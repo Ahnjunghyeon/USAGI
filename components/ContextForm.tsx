@@ -133,21 +133,26 @@ export default function ContextForm() {
             >
               <img src={preset.icon} alt="" width={46} height={46}/>
               <span>
-                <strong>{preset.label}</strong>
-                <small>{preset.id === "custom" ? "원하는 친구를 직접 설정" : `${preset.ageRange} · ${preset.gender} · ${preset.mbti}`}</small>
+                <strong>{preset.label}{preset.id !== "custom" ? ` · ${preset.mbti}` : ""}</strong>
+                <small>{preset.id === "custom" ? "원하는 성향과 말투를 직접 설정" : `${preset.ageRange} · ${preset.gender}`}</small>
+                {preset.id !== "custom" && <small className="friend-preset-note">{preset.note}</small>}
               </span>
+              {friendPresetId === preset.id && <span className="friend-preset-check" aria-hidden="true">✓</span>}
             </button>
           ))}
         </div>
       </div>
-      <div><label className="label">친구 이름</label><input className="field" value={friendName} onChange={(e)=>setFriendName(e.target.value)} maxLength={20} disabled={friendPresetId !== "custom"}/></div>
-      <div className="row"><div><label className="label">나이대</label><select className="field" value={friendAge} onChange={(e)=>setFriendAge(e.target.value)} disabled={friendPresetId !== "custom"}>{AGE_RANGES.map((item)=><option key={item}>{item}</option>)}</select></div><div><label className="label">성별</label><select className="field" value={friendGender} onChange={(e)=>setFriendGender(e.target.value)} disabled={friendPresetId !== "custom"}>{GENDERS.map((item)=><option key={item}>{item}</option>)}</select></div></div>
-      <MbtiSelect value={friendMbti} onChange={setFriendMbti} label="친구 MBTI" disabled={friendPresetId !== "custom"} />
-      <div className="friend-persona"><strong>{friendPresetId === "custom" ? "직접 설정 모드" : "이 친구는 이렇게 말해요"}</strong><span>{friendPersona}</span></div>
-      <div className="friend-preview">
-        <img className="friend-avatar" src={selectedFriendPreset.icon} alt={`${friendName || "우사기 친구"} 아이콘`} width={48} height={48}/>
-        <div><strong>{friendName || "우사기 친구"}</strong><small>{friendAge} · {friendGender} · {friendMbti}</small></div>
-      </div>
+      {friendPresetId === "custom" ? <>
+        <div className="friend-custom-fields">
+          <div><label className="label">친구 이름</label><input className="field" value={friendName} onChange={(e)=>setFriendName(e.target.value)} maxLength={20}/></div>
+          <div className="row"><div><label className="label">나이대</label><select className="field" value={friendAge} onChange={(e)=>setFriendAge(e.target.value)}>{AGE_RANGES.map((item)=><option key={item}>{item}</option>)}</select></div><div><label className="label">성별</label><select className="field" value={friendGender} onChange={(e)=>setFriendGender(e.target.value)}>{GENDERS.map((item)=><option key={item}>{item}</option>)}</select></div></div>
+          <MbtiSelect value={friendMbti} onChange={setFriendMbti} label="친구 MBTI" />
+        </div>
+        <div className="friend-persona"><strong>직접 설정한 친구의 말투</strong><span>{friendPersona}</span></div>
+      </> : <div className="friend-persona friend-persona-selected">
+        <strong>{friendName}은 이렇게 말해요</strong>
+        <span>{friendPersona}</span>
+      </div>}
     </section>
 
     <div className="bottom-actions"><button className="primary" onClick={next}>대화 보여주기 →</button></div>

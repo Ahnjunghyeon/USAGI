@@ -69,21 +69,12 @@ export default function ReportDemo(){
     </section>
 
     {partnerMbtiProfile && <section className="metric-card mbti-person-card">
-      <div className="metric-head">
-        <div>
-          <div className="metric-title">🧩 상대방 성향도 같이 볼까요?</div>
-          <div className="metric-sub">{ctx.other.mbti} · {partnerMbtiProfile.nickname}</div>
-        </div>
-        <span className="friend-badge">{partnerMbtiProfile.group}</span>
-      </div>
+      <div className="metric-head"><div><div className="metric-title">🧩 상대방 성향도 같이 볼까요?</div><div className="metric-sub">{ctx.other.mbti} · {partnerMbtiProfile.nickname}</div></div><span className="friend-badge">{partnerMbtiProfile.group}</span></div>
       <p className="mbti-person-copy">{partnerMbtiProfile.feature} {partnerMbtiProfile.conversationStyle}</p>
       <div className="mbti-tag-row">{partnerMbtiProfile.strengths.map((item)=><span key={item}>{item}</span>)}</div>
       <p className="mbti-link-copy"><strong>이번 대화와 연결해서 보면</strong><br/>현재 데모에서는 평소보다 답변 길이와 대화 확장 표현이 줄어든 변화가 확인됩니다. 입력된 {ctx.other.mbti}의 일반적인 성향 설명과 일부 맞닿는 부분은 있지만, MBTI만으로 감정이나 의도를 단정하지 않습니다.</p>
-      <div className="mbti-feedback">
-        <button type="button" className={mbtiFeedback === "similar" ? "selected" : ""} onClick={()=>{setMbtiFeedback("similar"); localStorage.setItem("urisai-mbti-feedback", "similar");}}>이 설명, 비슷해요</button>
-        <button type="button" className={mbtiFeedback === "different" ? "selected" : ""} onClick={()=>{setMbtiFeedback("different"); localStorage.setItem("urisai-mbti-feedback", "different");}}>별로 안 맞아요</button>
-      </div>
-      {mbtiFeedback && <div className="mbti-feedback-note">{mbtiFeedback === "similar" ? "실제 성향과 비슷하다고 알려주셨습니다. 다음 분석에서는 이 정보를 보조 맥락으로 참고할 수 있습니다." : "MBTI 설명이 실제 상대와 다를 수 있습니다. 다음 분석에서는 MBTI보다 대화 패턴을 더 우선해서 보겠습니다."}</div>}
+      <div className="mbti-feedback"><button type="button" className={mbtiFeedback === "similar" ? "selected" : ""} onClick={()=>{setMbtiFeedback("similar"); localStorage.setItem("urisai-mbti-feedback", "similar");}}>이 설명, 비슷해요</button><button type="button" className={mbtiFeedback === "different" ? "selected" : ""} onClick={()=>{setMbtiFeedback("different"); localStorage.setItem("urisai-mbti-feedback", "different");}}>별로 안 맞아요</button></div>
+      {mbtiFeedback && <div className="mbti-feedback-note">{mbtiFeedback === "similar" ? "실제 성향과 비슷하다고 알려주셨습니다. 현재 데모 화면에서만 참고합니다." : "MBTI 설명이 실제 상대와 다를 수 있습니다. 현재 데모에서는 실제 대화 패턴을 더 우선해서 봅니다."}</div>}
       <div className="mbti-more"><strong>아니다 싶으면 더 많은 대화를 올려보세요.</strong><span>평소 대화가 함께 있으면 현재 반응이 실제로 달라진 것인지 비교하기 쉬워집니다.</span><Link href="/analyze/upload" className="mbti-more-link">대화 더 보여주기 →</Link></div>
     </section>}
 

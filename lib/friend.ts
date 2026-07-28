@@ -53,33 +53,65 @@ function mbtiContextLine(ctx: UrIsaiContext) {
   return `${partner}가 ${ctx.other.mbti}라면 보통 ${casual}. ${profile.strengths[0]} 같은 장점도 있고 ${profile.cautions[0]} 쪽으로 보일 때도 있고. 근데 MBTI는 그냥 참고만 하고, 지금 실제 대화가 평소랑 달라졌는지를 먼저 보는 게 더 중요해. `;
 }
 
-export function buildDemoFriendComment(ctx: UrIsaiContext): string {
-  const partnerMbti = mbtiContextLine(ctx);
-  const presetLead = getPresetLead(ctx);
-
+/**
+ * @deprecated Demo compatibility helper.
+ * 실제 분석 결과 화면에서는 사용하지 않습니다.
+ * 오래된 ReportDemo.tsx가 남아 있는 작업환경에서도 typecheck/build가 깨지지 않도록 유지합니다.
+ */
+export function buildDemoSummary(ctx: UrIsaiContext) {
   switch (ctx.relationship) {
-    case "연인":
-      return `${presetLead}평소보다 대답이 확 짧아진 게 먼저 보여. ${partnerMbti}혹시 너 뭐 잘못한 거 없니?ㅋㅋ 감정부터 단정하지 말고 오늘 무슨 일 있었는지 차분하게 물어보는 게 낫겠다.`;
     case "썸":
-      return `${presetLead}네가 조금 더 달리고 있긴 한데 혼자 마라톤 뛰는 정도는 아님ㅋㅋ ${partnerMbti}이번엔 상대가 먼저 공 던지는지도 한번 봐.`;
+      return "대화는 이어지고 있지만, 현재 데모만으로 상대의 마음을 단정하기보다는 누가 질문을 이어가고 화제를 확장하는지 함께 보는 편이 좋습니다.";
+    case "연인":
+      return "현재 데모에서는 평소와 비교해 답변 길이와 대화 확장 표현이 달라졌는지를 우선 확인합니다. 한 장면보다 반복되는 변화가 더 중요합니다.";
     case "소개팅":
-      return `${presetLead}분위기는 나쁘지 않은데 아직 초반이잖아ㅋㅋ ${partnerMbti}다음 약속은 가볍게 한번 던져보고 반응을 보는 게 좋겠다.`;
+      return "초기 대화에서는 질문이 서로 오가는지, 답변이 다음 화제로 이어지는지, 후속 만남을 자연스럽게 꺼낼 흐름이 있는지를 중심으로 봅니다.";
     case "애매한 사이":
-      return `${presetLead}솔직히 딱 잘라 말하긴 애매해ㅋㅋ ${partnerMbti}그래도 대화를 이어가려는 반응은 있으니까 혼자 결론부터 내리진 마.`;
+      return "대화가 계속된다는 사실과 관계가 달라지고 있다는 해석은 구분해야 합니다. 먼저 대화 주도권과 개인적인 관심 표현이 반복되는지 확인합니다.";
     case "전애인":
-      return `${presetLead}추억 얘기했다고 바로 재회각 잡지는 말자ㅋㅋ ${partnerMbti}지금 확인되는 건 대화를 받아주고 있다는 정도야.`;
+      return "다시 연락이 이어진다는 사실만으로 재회 의도를 단정하지 않습니다. 과거 이야기, 현재의 경계, 대화를 이어가려는 행동을 따로 살펴봅니다.";
     case "친구":
-      return `${presetLead}서로 편하게 주고받는 흐름은 있는데 네가 질문을 조금 더 많이 하고 있네ㅋㅋ ${partnerMbti}이번엔 상대가 먼저 찾는지도 한번 봐.`;
+      return "친구 관계에서는 연락량 자체보다 서로 화제를 꺼내고 일상을 공유하는지가 중요합니다. 한쪽만 계속 대화를 유지하는지도 함께 봅니다.";
   }
 }
 
-export function buildDemoSummary(ctx: UrIsaiContext): string {
-  switch (ctx.relationship) {
-    case "연인": return "현재 대화에서는 상대방이 질문에 응답하고 있지만, 평소보다 답변 길이와 대화 확장 표현이 줄어든 상황을 가정한 데모입니다.";
-    case "썸": return "사용자님이 대화를 조금 더 주도하고 있지만, 상대방도 답변과 추가 반응을 통해 대화를 이어가는 상황을 가정한 데모입니다.";
-    case "소개팅": return "초기 대화에서 양쪽 모두 답변을 이어가고 있으며, 다음 대화로 연결될 여지가 있는 상황을 가정한 데모입니다.";
-    case "애매한 사이": return "대화는 이어지고 있지만 관계를 명확하게 판단할 직접적인 근거는 부족한 상황을 가정한 데모입니다.";
-    case "전애인": return "상대방이 대화를 받아주고 있지만, 이를 재회 의도로 단정할 근거는 부족한 상황을 가정한 데모입니다.";
-    case "친구": return "대화 자체는 자연스럽게 이어지고 있으나 사용자님이 질문과 대화 시작을 조금 더 많이 하는 상황을 가정한 데모입니다.";
+function getDemoAxisStyle(mbti: MbtiValue) {
+  if (mbti === "모름" || !/^[EI][NS][TF][JP]$/.test(mbti)) {
+    return { judgment: "balanced", perception: "balanced" } as const;
   }
+  return {
+    judgment: mbti[2] === "T" ? "thinking" : "feeling",
+    perception: mbti[1] === "N" ? "intuition" : "sensing",
+  } as const;
 }
+
+/**
+ * @deprecated Demo compatibility helper.
+ * 실제 분석 한마디는 서버의 Narrative Engine에서 생성합니다.
+ */
+export function buildDemoFriendComment(ctx: UrIsaiContext) {
+  const lead = getPresetLead(ctx);
+  const axis = getDemoAxisStyle(ctx.aiFriend.mbti);
+  const mbtiLine = mbtiContextLine(ctx);
+
+  const fact = ctx.relationship === "연인"
+    ? "평소보다 답이 짧아졌는지부터 보는 게 핵심이야. "
+    : ctx.relationship === "전애인"
+      ? "다시 답장을 받아줬다는 것과 다시 만나고 싶다는 건 다른 얘기야. "
+      : "대화가 끊기지 않고 서로 질문을 주고받는 흐름은 있는 편이야. ";
+
+  const judgment = axis.judgment === "thinking"
+    ? "지금 확인되는 행동만 놓고 보면 너무 앞서 결론낼 단계는 아니고, 다음 반응을 한 번 더 확인하는 게 맞아. "
+    : axis.judgment === "feeling"
+      ? "괜히 신경 쓰일 만한 포인트는 있는데, 아직 한 장면만 보고 마음을 단정할 필요는 없어. "
+      : "지금은 사실과 느낌을 같이 보되, 확정적으로 해석하진 않는 게 좋아. ";
+
+  const action = axis.perception === "intuition"
+    ? "너도 마음이 있다면 지금 나온 대화 소재를 살려서 가볍게 이어가 보고, 상대가 어떤 식으로 다시 받아오는지 보면 다음 흐름이 더 선명해질 거야."
+    : axis.perception === "sensing"
+      ? "너도 마음이 있다면 지금 대화에 실제로 나온 주제 하나를 골라 짧게 답해보고, 상대가 다시 질문하거나 화제를 이어가는지 확인해봐."
+      : "너도 마음이 있다면 부담 없는 답장 하나를 보내고 다음 반응을 확인해봐.";
+
+  return `${lead}${fact}${judgment}${mbtiLine}${action}`.replace(/\s+/g, " ").trim();
+}
+
