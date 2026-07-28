@@ -9,7 +9,7 @@ export default function Brand({ badge, compact = false, hero = false }: BrandPro
         <Image className="brand-icon" src="/usagi-icon-brand.png" width={hero ? 58 : 38} height={hero ? 58 : 38} alt="우사기 토끼 아이콘" priority />
         <div className="brand-wordmark">
           <strong>우사기<span className="brand-flower">✿</span></strong>
-          <span>우리 사이 기록</span>
+          <span>우리 사이 기류</span>
         </div>
       </div>
       {badge && <span className="chip">{badge}</span>}
