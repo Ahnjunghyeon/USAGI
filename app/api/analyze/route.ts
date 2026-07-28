@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { calculateMetrics, dedupeMessages, estimateDataAmount, type AnalysisResult, type NormalizedMessage } from "@/lib/analysis";
-import { callOpenAI, parseJsonText } from "@/lib/openai";
+import { callOpenAI, OpenAIError, parseJsonText } from "@/lib/openai";
 import { buildAiFriendInstruction } from "@/lib/prompts";
 import { MBTI_PROFILES, type MbtiType } from "@/lib/mbti";
 import { validateAndNormalizeContext } from "@/lib/validation";
 import { consumeRateLimit, getClientKey } from "@/lib/rate-limit";
+import { buildSafetyIdentifier } from "@/lib/safety";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -63,20 +64,35 @@ function validateImages(value: unknown): string[] | null {
   return images;
 }
 
-function productionSafeError(error: unknown) {
-  const raw = error instanceof Error ? error.message : "분석 중 알 수 없는 오류가 발생했습니다.";
-  if (raw === "OPENAI_API_KEY_MISSING") {
-    return process.env.NODE_ENV === "development" ? "OPENAI_API_KEY가 설정되어 있지 않습니다." : "현재 분석 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+function mapOpenAIError(error: unknown) {
+  if (!(error instanceof OpenAIError)) {
+    return { status: 500, publicMessage: "분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요." };
   }
-  if (process.env.NODE_ENV === "development") return raw;
-  return "분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+
+  const code = error.code || error.type || "unknown";
+  if (code === "api_key_missing") {
+    return {
+      status: 503,
+      publicMessage: process.env.NODE_ENV === "development"
+        ? "OPENAI_API_KEY가 설정되어 있지 않습니다."
+        : "현재 분석 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+  if (error.status === 401) return { status: 503, publicMessage: "현재 분석 서비스 설정을 확인하고 있습니다. 잠시 후 다시 시도해 주세요." };
+  if (error.status === 429 && ["insufficient_quota", "billing_hard_limit_reached"].includes(code)) {
+    return { status: 503, publicMessage: "현재 분석 서비스 이용량이 한도에 도달했습니다. 잠시 후 다시 시도해 주세요." };
+  }
+  if (error.status === 429) return { status: 429, publicMessage: "분석 요청이 잠시 몰리고 있습니다. 잠시 후 다시 시도해 주세요." };
+  if (error.status === 403) return { status: 503, publicMessage: "현재 선택한 AI 모델을 사용할 수 없습니다. 잠시 후 다시 시도해 주세요." };
+  return { status: error.status >= 500 ? 502 : 500, publicMessage: "분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요." };
 }
 
 export async function POST(request: Request) {
   const declaredLength = Number(request.headers.get("content-length") || 0);
   if (declaredLength > 4_000_000) return NextResponse.json({ error: "업로드 용량이 너무 큽니다. 캡처 수를 줄여주세요." }, { status: 413 });
 
-  const rate = consumeRateLimit(getClientKey(request));
+  const clientKey = getClientKey(request);
+  const rate = await consumeRateLimit(clientKey);
   if (!rate.ok) {
     return NextResponse.json(
       { error: "요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요." },
@@ -86,6 +102,7 @@ export async function POST(request: Request) {
 
   try {
     const rawBody = (await request.json()) as { context?: unknown; images?: unknown };
+    const safetyIdentifier = buildSafetyIdentifier(clientKey);
     const context = validateAndNormalizeContext(rawBody.context);
     const images = validateImages(rawBody.images);
     if (!context) return NextResponse.json({ error: "분석 설정값이 올바르지 않습니다. 처음부터 다시 설정해 주세요." }, { status: 400 });
@@ -99,6 +116,7 @@ export async function POST(request: Request) {
       instructions: parserInstruction,
       maxOutputTokens: 6000,
       jsonSchema: { name: "parsed_conversation", schema: parsedConversationSchema },
+      safetyIdentifier,
     });
 
     const parsed = parseJsonText<ParsedConversation>(vision.text);
@@ -120,6 +138,7 @@ export async function POST(request: Request) {
       instructions: buildAiFriendInstruction(context),
       maxOutputTokens: 900,
       jsonSchema: { name: "usagi_narrative", schema: narrativeSchema },
+      safetyIdentifier,
     });
     const narrative = parseJsonText<Narrative>(analysis.text);
     const result: AnalysisResult = {
@@ -129,7 +148,7 @@ export async function POST(request: Request) {
       metrics,
       summary: narrative.summary.slice(0, 500) || "대화 패턴을 확인했습니다.",
       highlights: Array.isArray(narrative.highlights) ? narrative.highlights.map((x) => String(x).slice(0, 300)).slice(0, 4) : [],
-      friendComment: narrative.friendComment.slice(0, 450) || "대화가 조금 더 있으면 더 자연스럽게 볼 수 있겠다.",
+      friendComment: narrative.friendComment.slice(0, 260) || "대화가 조금 더 있으면 더 자연스럽게 볼 수 있겠다.",
       dataAmount,
       extractedMessageCount: messages.length,
     };
@@ -145,7 +164,13 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ result });
   } catch (error) {
-    console.error("[usagi/analyze]", error);
-    return NextResponse.json({ error: productionSafeError(error) }, { status: 500 });
+    if (error instanceof OpenAIError) {
+      console.error("[usagi/analyze]", { status: error.status, code: error.code, type: error.type, message: error.message });
+    } else {
+      console.error("[usagi/analyze]", error);
+    }
+    const mapped = mapOpenAIError(error);
+    const headers = mapped.status === 429 ? { "Retry-After": "20" } : undefined;
+    return NextResponse.json({ error: mapped.publicMessage }, { status: mapped.status, headers });
   }
 }

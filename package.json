@@ -1,12 +1,13 @@
 {
   "name": "usagi-phase1",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "qa": "npm run typecheck && npm run build"
   },
   "dependencies": {
     "next": "15.5.18",
