@@ -7,8 +7,8 @@ import { AppButton } from "@/components/ui/Button";
 import { contextStorage, inputDraftStorage, resultStorage, uploadStorage } from "@/lib/client/storage";
 
 const stepIcons = ["stealth", "pattern", "data", "focus"] as const;
-const directTexts = ["대화를 읽고 있습니다...", "두 사람의 메시지를 구분하고 있습니다...", "질문과 대화 균형을 계산하고 있습니다...", "AI 친구가 마지막 한마디를 정리하고 있습니다..."];
-const groupTexts = ["단체톡 대화를 읽고 있습니다...", "누가 말했는지 참가자를 구분하고 있습니다...", "나와 각 사람의 티키타카를 비교하고 있습니다...", "AI 친구가 눈에 띈 기류를 정리하고 있습니다..."];
+const directTexts = ["대화를 읽고 있습니다...", "두 사람의 메시지를 구분하고 있습니다...", "질문과 대화 균형을 계산하고 있습니다...", "AI 친구가 핵심만 짧게 정리하고 있습니다..."];
+const groupTexts = ["단체톡 대화를 읽고 있습니다...", "누가 말했는지 참가자를 구분하고 있습니다...", "나와 각 사람의 티키타카를 비교하고 있습니다...", "AI 친구가 눈에 띈 흐름만 짧게 정리하고 있습니다..."];
 
 export default function Processing() {
   const [idx, setIdx] = useState(0);
@@ -23,7 +23,7 @@ export default function Processing() {
     let disposed = false;
     const controller = new AbortController();
     controllerRef.current = controller;
-    const timer = setInterval(() => setIdx((v) => Math.min(v + 1, 3)), 1500);
+    const timer = setInterval(() => setIdx((v) => Math.min(v + 1, 3)), 1900);
 
     const run = async () => {
       try {
@@ -84,7 +84,7 @@ export default function Processing() {
   const texts = mode === "group" ? groupTexts : directTexts;
   return <>
     <ProcessingMascot stage={idx} />
-    <div className="steps">{texts.map((t, i) => <div className={`step ${i < idx ? "done" : i === idx ? "active" : ""}`} key={t}><div className="step-dot">{i < idx ? "✓" : i + 1}</div><BrandFeature variant={stepIcons[i]} size={36} /><strong>{t}</strong></div>)}</div>
+    <div className="steps">{texts.map((t, i) => <div className={`step ${i < idx ? "done" : i === idx ? "active" : ""}`} key={t}><div className="step-dot">{i < idx ? <span className="step-check" aria-label="완료">✓</span> : i + 1}</div><BrandFeature variant={stepIcons[i]} size={36} /><strong>{t}</strong></div>)}</div>
     <div className="processing-actions"><AppButton variant="secondary" fullWidth className="cancel-analysis" onClick={cancel} disabled={cancelling}>{cancelling ? "취소 중..." : "분석 취소하기"}</AppButton><p>취소하면 남은 분석 요청을 중단합니다. 이미 AI 처리가 시작된 구간의 사용량은 발생할 수 있습니다.</p></div>
   </>;
 }

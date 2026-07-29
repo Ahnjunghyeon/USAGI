@@ -132,3 +132,16 @@ AI 친구 프리셋 중복 카드 제거와 모바일 선택 UI QA를 적용했�
 
 ### v0.3.15
 카카오톡 텍스트 붙여넣기 분석, 1:1/단체톡 자동 감지, 3단계 입력 흐름, 단체톡 본인 화자 선택을 추가했습니다. 텍스트 입력은 로컬 파서로 화자를 구조화해 Vision 호출을 생략합니다.
+
+### v0.3.15 Clean Baseline Refactor
+- v0.3.19 계열에서 섞여 들어온 preflight / ConversationDataset 실험 코드를 제거하고 v0.3.15의 단일 분석 흐름만 남겼습니다.
+- 첫 입력 안내의 이모지 토끼를 `/public/usagi-focus.png`로 교체했습니다.
+- 분석 로딩 캐릭터는 `/public/usagi-guide-bunny.png`를 베이스로 사용하며, 안경 낙하 + 렌즈 피쓩 + 미세 집중 모션을 유지합니다.
+- 모바일 분석 화면의 과도한 상단 여백을 줄였습니다.
+- 실제 진행률처럼 오해될 수 있던 왕복 게이지를 잔잔한 활성 상태 펄스로 변경했습니다.
+
+### v0.3.15.2 — Structured JSON & Transparent Mascot Fix
+- 최종 AI 응답의 `max_output_tokens`를 여유 있게 복구하되, 실제 답변 길이는 프롬프트의 120~170자 규칙으로 유지해 JSON 잘림을 방지합니다.
+- Responses API가 `incomplete` 상태를 반환하면 JSON.parse 전에 감지해 원인을 명확하게 처리합니다.
+- 잘못된 structured output은 `OpenAIError`로 정규화해 raw SyntaxError 500 대신 사용자 친화적인 재시도 오류로 처리합니다.
+- 투명 배경 `usagi-guide-bunny.png` 사용을 전제로 `mix-blend-mode`, 외곽 drop-shadow, 배경 효과를 제거했습니다.

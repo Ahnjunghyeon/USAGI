@@ -112,12 +112,40 @@ export async function callOpenAI(
   }
 
   if (options?.signal?.aborted) throw new AnalysisCancelledError();
+
+  const responseMeta = responseBody as {
+    status?: string;
+    incomplete_details?: { reason?: string };
+  };
+  if (responseMeta.status === "incomplete") {
+    const reason = responseMeta.incomplete_details?.reason || "unknown";
+    throw new OpenAIError(
+      reason === "max_output_tokens"
+        ? "AI JSON 응답이 출력 한도에서 잘렸습니다."
+        : "AI 응답이 완료되기 전에 종료되었습니다.",
+      502,
+      reason === "max_output_tokens" ? "output_truncated" : "incomplete_response",
+      "incomplete_response",
+    );
+  }
+
   const text = getOutputText(responseBody);
   if (!text) throw new OpenAIError("AI 응답에서 텍스트를 찾지 못했습니다.", 502, "empty_response");
   return { text, model, usage: getUsage(responseBody) };
 }
 
 export function parseJsonText<T>(text: string): T {
-  const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
-  return JSON.parse(cleaned) as T;
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  try {
+    return JSON.parse(cleaned) as T;
+  } catch (error) {
+    const preview = cleaned.slice(Math.max(0, cleaned.length - 160));
+    console.error("[usagi/json] invalid structured output", { length: cleaned.length, tail: preview });
+    throw new OpenAIError(
+      error instanceof SyntaxError ? `AI JSON 응답 형식 오류: ${error.message}` : "AI JSON 응답을 해석하지 못했습니다.",
+      502,
+      "invalid_json_output",
+      "structured_output_error",
+    );
+  }
 }

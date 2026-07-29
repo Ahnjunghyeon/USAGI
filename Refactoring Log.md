@@ -275,3 +275,26 @@ Vision이 3명 이상을 구분하거나 다른 화자 ID가 2개 이상 감지�
 - 텍스트에서는 참가자 수를 기준으로 1:1/단체톡을 자동 감지하고, 단체톡에서는 본인 화자를 선택할 수 있도록 했습니다.
 - 단계별 우사기 안내 문구와 진행 UI를 추가해 설문처럼 보이는 입력 피로를 줄였습니다.
 - 입력 초안은 sessionStorage에 유지해 단계 이동 시 정보가 사라지지 않도록 했습니다.
+
+## v0.3.15 Clean Baseline Refactor
+- 실제 사용 중인 v0.3.15 흐름만 남기고 preflight / ConversationDataset / image-dataset-manager 실험 코드를 제거했습니다.
+- `ConversationInput` 안내 캐릭터를 `public/usagi-focus.png`로 변경했습니다.
+- `ProcessingMascot`은 새 `public/usagi-guide-bunny.png`를 사용하며 안경 착용 및 렌즈 피쓩 애니메이션을 유지합니다.
+- 모바일 Processing 상단 여백과 로딩 진행 표현을 정리했습니다.
+- legacy QA 스크립트가 후속 실험 파이프라인 잔존도 감지하도록 확장했습니다.
+
+## v0.3.15.1 — UI / Final Analysis Latency Refactor
+
+- `usagi-focus.png`의 둥근 네모/그림자 효과를 제거해 투명 캐릭터 자체가 자연스럽게 보이도록 수정했습니다.
+- `usagi-guide-bunny.png` 베이스 위 안경의 위치·폭·렌즈 크기를 눈 좌표에 맞게 다시 설계하고 착용/피쓩 애니메이션을 유지했습니다.
+- 마지막 AI 해석 입력량을 줄이기 위해 1:1 샘플을 최대 36개(앞 12 + 최근 24), 단톡 샘플을 최근 36개로 축소했습니다.
+- 단톡 AI 프롬프트에는 상호작용 상위 참가자 최대 4명만 전달하고 participantNotes도 최대 4명으로 제한했습니다.
+- friendComment 목표를 120~170자로 줄이고 최종 output token 상한을 1:1 340 / 단톡 480으로 낮췄습니다.
+- AI 친구 system instruction을 12개 핵심 원칙으로 통합해 중복 입력 토큰을 줄였습니다.
+- 마지막 로딩 단계가 너무 일찍 나타나 오래 정지한 것처럼 보이지 않도록 단계 전환 간격을 1.9초로 조정했습니다.
+
+### v0.3.15.2 — Structured JSON & Transparent Mascot Fix
+- 최종 AI 응답의 `max_output_tokens`를 여유 있게 복구하되, 실제 답변 길이는 프롬프트의 120~170자 규칙으로 유지해 JSON 잘림을 방지합니다.
+- Responses API가 `incomplete` 상태를 반환하면 JSON.parse 전에 감지해 원인을 명확하게 처리합니다.
+- 잘못된 structured output은 `OpenAIError`로 정규화해 raw SyntaxError 500 대신 사용자 친화적인 재시도 오류로 처리합니다.
+- 투명 배경 `usagi-guide-bunny.png` 사용을 전제로 `mix-blend-mode`, 외곽 drop-shadow, 배경 효과를 제거했습니다.

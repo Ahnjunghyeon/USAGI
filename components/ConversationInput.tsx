@@ -29,10 +29,10 @@ export default function ConversationInput() {
   };
 
   return <div className="conversation-input">
-    <div className="guide-bunny" aria-hidden="true"><span>🐰</span></div>
+    <div className="guide-bunny" aria-hidden="true"><img src="/usagi-focus.png" alt="" width={88} height={88}/></div>
     <div className="guide-copy">
       <strong>대화부터 보여줘봐.</strong>
-      <span>텍스트를 붙여넣으면 가장 빠르고, 사진밖에 없어도 괜찮아요.</span>
+      <span>카카오톡은 복사해서 붙여넣는 게 가장 빠르고, 캡처만 있어도 괜찮아요.</span>
     </div>
 
     <div className="input-method-tabs" role="tablist" aria-label="대화 입력 방식">

@@ -64,7 +64,7 @@ export default function DetailsForm() {
   };
 
   return <>
-    <div className="guide-inline"><div><span>🐰</span><strong>좋아. 마지막으로 이것만 알려줘.</strong>
+    <div className="guide-inline"><div><strong>🐰 좋아. 마지막으로 이것만 알려줘.</strong>
     <br></br><small>모르는 항목은 ‘모름’으로 두어도 분석할 수 있어요.</small></div></div>
 
     {input?.method === "text" && input.participants.length > 1 && <section className="form-card stack">

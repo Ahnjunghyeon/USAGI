@@ -110,30 +110,31 @@ button { cursor: pointer; }
 
 /* v0.3.9 — transparent chubby Usagi analysis mascot */
 .processing-mascot{margin:24px auto 6px;display:grid;justify-items:center;text-align:center;gap:5px;color:var(--text)}
-.processing-mascot-orbit{position:relative;width:174px;height:158px;display:grid;place-items:center;filter:drop-shadow(0 14px 24px rgba(17,17,17,.08))}
+.processing-mascot-orbit{position:relative;width:174px;height:158px;display:grid;place-items:center;background:transparent;filter:none}
 .processing-mascot>strong{margin-top:2px;font-size:14px;letter-spacing:-.03em}
 .processing-mascot>span{font-size:11px;color:var(--muted)}
-.analysis-bunny{position:relative;width:150px;height:144px;animation:usagi-focus 2.8s ease-in-out infinite;transform-origin:50% 78%}
-.bunny-body{position:absolute;left:19px;top:46px;width:112px;height:88px;border:2.5px solid #17191c;border-radius:54% 54% 47% 48%;background:linear-gradient(180deg,#fffdfa 0%,#fff8f4 100%);box-shadow:inset 0 -8px 18px rgba(255,187,187,.09)}
-.bunny-ear{position:absolute;top:2px;width:31px;height:68px;background:#fffafa;border:2.5px solid #17191c;border-radius:52% 52% 45% 45%;z-index:0;transform-origin:50% 100%}
-.bunny-ear i{position:absolute;left:9px;top:12px;width:10px;height:39px;background:linear-gradient(#ffaab3,#ff8c9c);border-radius:999px;opacity:.9}
-.bunny-ear-left{left:39px;transform:rotate(-5deg)}.bunny-ear-right{right:39px;transform:rotate(4deg)}
-.bunny-eye{position:absolute;top:42px;width:13px;height:7px;border-radius:1px 1px 8px 8px;background:#111418}.bunny-eye::before{content:"";position:absolute;left:0;top:-2px;width:14px;height:3px;border-radius:999px;background:#111418}
-.bunny-eye-left{left:27px}.bunny-eye-right{right:27px}
-.bunny-mouth{position:absolute;left:50%;top:62px;width:31px;height:3px;border-radius:999px;background:#15171a;transform:translateX(-50%)}
-.bunny-cheek{position:absolute;top:55px;width:15px;height:8px;border-radius:999px;background:rgba(255,151,162,.18);filter:blur(.1px)}.bunny-cheek-left{left:13px}.bunny-cheek-right{right:13px}
-.bunny-paw{position:absolute;bottom:-8px;width:25px;height:16px;background:#fffaf7;border:2.5px solid #17191c;border-radius:50%}.bunny-paw-left{left:15px}.bunny-paw-right{right:15px}
-.analysis-glasses{position:absolute;left:50%;top:79px;width:84px;height:34px;opacity:0;transform:translate(-50%,-52px) scale(.76) rotate(-5deg);animation:glasses-drop-focus 2.8s cubic-bezier(.2,.95,.22,1) infinite;z-index:3;transform-origin:center}
-.lens{position:absolute;top:2px;width:34px;height:27px;border:3px solid #17191c;border-radius:44%;background:rgba(242,255,247,.12);box-shadow:inset 0 0 0 2px rgba(123,228,149,.11)}
-.lens-left{left:2px}.lens-right{right:2px}.glasses-bridge{position:absolute;left:34px;top:13px;width:16px;height:3px;border-radius:999px;background:#17191c}.glasses-arm{position:absolute;top:10px;width:17px;height:3px;border-radius:999px;background:#17191c}.glasses-arm-left{left:-10px;transform:rotate(13deg)}.glasses-arm-right{right:-10px;transform:rotate(-13deg)}
-.lens-spark{position:absolute;color:#fff;text-shadow:0 0 5px #fff,0 0 14px #58d77d,0 0 24px #58d77d;opacity:0;pointer-events:none;z-index:4}.spark-one{left:111px;top:72px;font-size:27px;animation:lens-pish 2.8s ease-out infinite}.spark-two{left:125px;top:89px;font-size:15px;animation:lens-pish 2.8s .11s ease-out infinite}
-.processing-mascot.stage-4 .processing-mascot-orbit{filter:drop-shadow(0 14px 27px rgba(33,198,91,.18))}.processing-mascot.stage-4 .analysis-bunny{animation-duration:2.15s}
-.step{position:relative;overflow:hidden}.step::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent-strong);transition:width .45s ease}.step.done::after{width:100%}.step.active::after{width:42%;animation:step-progress 1.6s ease-in-out infinite alternate}
+.analysis-bunny{position:relative;width:150px;height:150px;animation:usagi-focus 2.8s ease-in-out infinite;transform-origin:50% 78%;overflow:visible}
+
+
+
+
+
+
+
+
+
+.analysis-bunny-base{position:absolute;inset:0;width:150px;height:150px;object-fit:contain;display:block;background:transparent;border-radius:0;box-shadow:none;filter:none;mix-blend-mode:normal}
+.analysis-glasses{position:absolute;left:50%;top:78px;width:78px;height:31px;opacity:0;transform:translate(-50%,-50px) scale(.82) rotate(-4deg);animation:glasses-drop-focus 2.8s cubic-bezier(.2,.95,.22,1) infinite;z-index:3;transform-origin:50% 50%}
+.lens{position:absolute;top:1px;width:33px;height:26px;border:3px solid #202327;border-radius:48% 48% 44% 44%;background:rgba(235,250,244,.10);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.lens-left{left:1px}.lens-right{right:1px}.glasses-bridge{position:absolute;left:32px;top:11px;width:14px;height:3px;border-radius:999px;background:#202327}.glasses-arm{position:absolute;top:8px;width:15px;height:3px;border-radius:999px;background:#202327}.glasses-arm-left{left:-9px;transform:rotate(10deg)}.glasses-arm-right{right:-9px;transform:rotate(-10deg)}
+.lens-spark{position:absolute;color:#fff;text-shadow:0 0 5px #fff,0 0 14px #58d77d,0 0 24px #58d77d;opacity:0;pointer-events:none;z-index:4}.spark-one{left:103px;top:76px;font-size:23px;animation:lens-pish 2.8s ease-out infinite}.spark-two{left:119px;top:91px;font-size:13px;animation:lens-pish 2.8s .11s ease-out infinite}
+.processing-mascot.stage-4 .processing-mascot-orbit{filter:none}.processing-mascot.stage-4 .analysis-bunny{animation-duration:2.15s}
+.step{position:relative;overflow:hidden}.step::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent-strong);transition:width .45s ease}.step.done::after{width:100%}.step.active::after{width:100%;opacity:.32;animation:step-active-pulse 1.2s ease-in-out infinite}
 @keyframes usagi-focus{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(1.7px) rotate(.45deg)}62%{transform:translateX(-1.8px) rotate(-.5deg)}73%{transform:translateX(1px) rotate(.2deg)}}
 @keyframes glasses-drop-focus{0%,13%{opacity:0;transform:translate(-50%,-52px) scale(.76) rotate(-5deg)}24%{opacity:1;transform:translate(-50%,4px) scale(1.05) rotate(1deg)}29%,77%{opacity:1;transform:translate(-50%,0) scale(1) rotate(0)}88%,100%{opacity:0;transform:translate(-50%,1px) scale(1.02) rotate(0)}}
 @keyframes lens-pish{0%,31%{opacity:0;transform:scale(.2) rotate(-28deg)}38%{opacity:1;transform:scale(1.35) rotate(6deg)}48%,100%{opacity:0;transform:scale(.35) rotate(35deg)}}
-@keyframes step-progress{from{width:22%}to{width:78%}}
-@media(prefers-reduced-motion:reduce){.analysis-bunny,.analysis-glasses,.lens-spark,.step.active::after{animation:none}.analysis-glasses{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes step-active-pulse{0%,100%{opacity:.18}50%{opacity:.55}}
+@media(prefers-reduced-motion:reduce){.analysis-bunny,.analysis-glasses,.lens-spark,.step.active::after,.guide-bunny img{animation:none}.analysis-glasses{opacity:1;transform:translate(-50%,0) scale(1)}}
 .step .brand-feature{width:42px;height:36px;border-radius:10px;background:#f7f8fa;padding:3px;opacity:.64;transition:opacity .25s ease,transform .25s ease,background .25s ease}.step.active .brand-feature{opacity:1;transform:scale(1.05);background:#f2fff6}.step.done .brand-feature{opacity:.88}.step strong{line-height:1.35;letter-spacing:-.02em}
 @media(max-width:380px){.step{gap:10px;padding:15px}.step .brand-feature{width:36px}.step strong{font-size:13px}}
 
@@ -210,7 +211,9 @@ button { cursor: pointer; }
 
 /* v0.3.15 — guided input flow */
 .conversation-input{display:grid;gap:14px}
-.guide-bunny{display:flex;justify-content:center;font-size:46px;line-height:1}
+.guide-bunny{display:flex;justify-content:center;align-items:center;line-height:1}
+.guide-bunny img{width:96px;height:96px;object-fit:contain;display:block;background:transparent;border-radius:0;box-shadow:none;filter:none;animation:guide-usagi-bob 3s ease-in-out infinite;transform-origin:50% 82%}
+@keyframes guide-usagi-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .guide-copy{text-align:center;display:grid;gap:4px}
 .guide-copy strong{font-size:16px}
 .guide-copy span{font-size:12px;color:var(--muted);line-height:1.5}
@@ -234,3 +237,99 @@ button { cursor: pointer; }
 .image-method-callout span,.detected-chat-banner span{font-size:12px;color:var(--muted)}
 .group-me-select{display:grid;gap:7px}
 .group-me-select small{font-size:11px;color:var(--muted)}
+
+.processing-shell{padding-top:12px}.processing-frame{padding-top:12px}
+@media(max-width:560px){.processing-shell{padding-top:4px}.processing-frame{padding-top:8px}.processing-frame .eyebrow{margin-top:0}.processing-frame .section-title{margin-bottom:10px}.processing-mascot{margin-top:10px}}
+
+
+/* v0.3.15.3 — Toss-like completion "퐁당" motion */
+.step.done{
+  animation:step-done-surface .56s cubic-bezier(.22,1,.36,1) both;
+}
+.step.done .step-dot{
+  position:relative;
+  isolation:isolate;
+  overflow:visible;
+  animation:step-dot-splash-pop .62s cubic-bezier(.18,1.25,.32,1) both;
+}
+.step.done .step-dot::before{
+  content:"";
+  position:absolute;
+  inset:-7px;
+  z-index:-1;
+  border:2px solid color-mix(in srgb,var(--accent-strong) 58%, transparent);
+  border-radius:50%;
+  opacity:0;
+  transform:scale(.42);
+  animation:step-check-ripple .7s cubic-bezier(.2,.8,.2,1) both;
+}
+.step.done .step-dot::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:-1;
+  width:4px;
+  height:4px;
+  margin:-2px 0 0 -2px;
+  border-radius:999px;
+  background:var(--accent-strong);
+  box-shadow:
+    0 -20px 0 -1px var(--accent-strong),
+    14px -14px 0 -1.25px var(--accent-strong),
+    20px 0 0 -1px var(--accent-strong),
+    14px 14px 0 -1.25px var(--accent-strong),
+    0 20px 0 -1px var(--accent-strong),
+    -14px 14px 0 -1.25px var(--accent-strong),
+    -20px 0 0 -1px var(--accent-strong),
+    -14px -14px 0 -1.25px var(--accent-strong);
+  opacity:0;
+  transform:scale(.18) rotate(-8deg);
+  animation:step-check-droplets .58s .04s cubic-bezier(.18,.8,.26,1) both;
+}
+.step-check{
+  display:inline-grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  font-weight:900;
+  transform-origin:50% 60%;
+  animation:step-check-mark .48s .06s cubic-bezier(.2,1.35,.34,1) both;
+}
+
+@keyframes step-dot-splash-pop{
+  0%{transform:scale(.76);filter:brightness(1)}
+  38%{transform:scale(1.18);filter:brightness(1.04)}
+  68%{transform:scale(.94)}
+  100%{transform:scale(1);filter:brightness(1)}
+}
+@keyframes step-check-ripple{
+  0%{opacity:.48;transform:scale(.4)}
+  55%{opacity:.2}
+  100%{opacity:0;transform:scale(1.72)}
+}
+@keyframes step-check-droplets{
+  0%{opacity:0;transform:scale(.16) rotate(-10deg)}
+  24%{opacity:.72}
+  100%{opacity:0;transform:scale(1.03) rotate(7deg)}
+}
+@keyframes step-check-mark{
+  0%{opacity:0;transform:scale(.45) rotate(-14deg)}
+  62%{opacity:1;transform:scale(1.17) rotate(3deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes step-done-surface{
+  0%{background:#fff}
+  35%{background:color-mix(in srgb,var(--accent) 8%,#fff)}
+  100%{background:#fff}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .step.done,
+  .step.done .step-dot,
+  .step.done .step-dot::before,
+  .step.done .step-dot::after,
+  .step-check{
+    animation:none!important;
+  }
+}
