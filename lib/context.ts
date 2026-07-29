@@ -1,5 +1,9 @@
+
 import type { MbtiValue } from "@/lib/mbti";
 import type { AiFriendPresetId } from "@/lib/friend-presets";
+
+export const CONVERSATION_MODES = ["direct", "group"] as const;
+export type ConversationMode = (typeof CONVERSATION_MODES)[number];
 
 export const RELATIONSHIPS = ["썸", "연인", "소개팅", "애매한 사이", "전애인", "친구"] as const;
 export type RelationshipType = (typeof RELATIONSHIPS)[number];
@@ -28,6 +32,14 @@ export const ANALYSIS_GOALS: Record<RelationshipType, readonly string[]> = {
   친구: ["대화가 일방적인지", "요즘 멀어진 느낌이 맞는지", "서로 편한 사이인지", "제가 너무 많이 연락하는지", "전체적으로 봐주세요"],
 };
 
+export const GROUP_ANALYSIS_GOALS = [
+  "누구와 가장 티키타카가 좋은지",
+  "나에게 유독 반응하는 사람이 있는지",
+  "내가 누구와 대화할 때 제일 신나 보이는지",
+  "단톡 안에서 눈에 띄는 기류가 있는지",
+  "전체적으로 봐주세요",
+] as const;
+
 export type PersonContext = {
   ageRange: string;
   gender: string;
@@ -41,9 +53,11 @@ export type AiFriendContext = PersonContext & {
 };
 
 export type UrIsaiContext = {
+  mode: ConversationMode;
   relationship: RelationshipType;
   duration: string;
   goal: string;
+  groupGoal?: string;
   me: PersonContext;
   other: PersonContext;
   aiFriend: AiFriendContext;

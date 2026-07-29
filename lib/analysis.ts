@@ -32,3 +32,99 @@ export function calculateMetrics(messages:NormalizedMessage[]):ConversationMetri
 export function estimateDataAmount(messages:NormalizedMessage[]):AnalysisResult["dataAmount"]{if(messages.length>=40)return"충분";if(messages.length>=14)return"보통";return"적음"}
 
 export function dedupeMessages(messages:NormalizedMessage[]):NormalizedMessage[]{const result:NormalizedMessage[]=[];for(const message of messages){const text=message.text.trim().replace(/\s+/g," ");if(!text)continue;const previous=result[result.length-1];if(previous&&previous.speaker===message.speaker&&previous.text.trim().replace(/\s+/g," ")===text&&(previous.timestamp??null)===(message.timestamp??null))continue;result.push({...message,text})}return result}
+
+
+export type GroupMessage = {
+  speakerId: string;
+  speakerName: string;
+  isMe: boolean;
+  text: string;
+  timestamp?: string | null;
+};
+
+export type GroupParticipantMetric = {
+  speakerId: string;
+  name: string;
+  messageCount: number;
+  questionCount: number;
+  laughterCount: number;
+  respondsAfterMe: number;
+  meRespondsAfterThem: number;
+  directTurnsWithMe: number;
+  interactionScore: number;
+};
+
+export type GroupAnalysis = {
+  participantCount: number;
+  participants: GroupParticipantMetric[];
+  standoutName: string | null;
+  standoutReason: string;
+  participantNotes: { name: string; note: string }[];
+};
+
+export type GroupAwareAnalysisResult = AnalysisResult & {
+  groupAnalysis?: GroupAnalysis;
+};
+
+function groupQuestion(text: string) {
+  return /[?？]/u.test(text) || /(뭐|왜|어때|언제|어디|누구|어떻게|맞아|괜찮아|했어|할래|갈래|볼래|먹을래)\s*$/u.test(text.trim());
+}
+
+export function calculateGroupParticipantMetrics(messages: GroupMessage[]): GroupParticipantMetric[] {
+  const byId = new Map<string, GroupParticipantMetric>();
+  for (const m of messages) {
+    if (m.isMe) continue;
+    const current = byId.get(m.speakerId) ?? {
+      speakerId: m.speakerId,
+      name: m.speakerName || "이름 미상",
+      messageCount: 0,
+      questionCount: 0,
+      laughterCount: 0,
+      respondsAfterMe: 0,
+      meRespondsAfterThem: 0,
+      directTurnsWithMe: 0,
+      interactionScore: 0,
+    };
+    current.messageCount += 1;
+    if (groupQuestion(m.text)) current.questionCount += 1;
+    current.laughterCount += (m.text.match(/(?:ㅋ{2,}|ㅎ{2,})/g) ?? []).length;
+    byId.set(m.speakerId, current);
+  }
+
+  for (let i = 1; i < messages.length; i += 1) {
+    const prev = messages[i - 1];
+    const cur = messages[i];
+    if (prev.isMe && !cur.isMe) {
+      const metric = byId.get(cur.speakerId);
+      if (metric) {
+        metric.respondsAfterMe += 1;
+        metric.directTurnsWithMe += 1;
+      }
+    } else if (!prev.isMe && cur.isMe) {
+      const metric = byId.get(prev.speakerId);
+      if (metric) {
+        metric.meRespondsAfterThem += 1;
+        metric.directTurnsWithMe += 1;
+      }
+    }
+  }
+
+  for (const metric of byId.values()) {
+    metric.interactionScore =
+      metric.directTurnsWithMe * 3 +
+      Math.min(metric.questionCount, 5) * 2 +
+      Math.min(metric.laughterCount, 4);
+  }
+
+  return [...byId.values()].sort((a, b) =>
+    b.interactionScore - a.interactionScore || b.messageCount - a.messageCount
+  );
+}
+
+export function groupToBinaryMessages(messages: GroupMessage[]): NormalizedMessage[] {
+  return messages.map((m) => ({
+    speaker: m.isMe ? "me" : "other",
+    text: m.text,
+    timestamp: m.timestamp ?? null,
+  }));
+}
