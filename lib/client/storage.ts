@@ -46,3 +46,32 @@ export const resultStorage = {
   write: (result: unknown) => { if (typeof window !== "undefined") writeJson(window.sessionStorage, STORAGE_KEYS.analysisResult, result); },
   clear: () => { if (typeof window !== "undefined") window.sessionStorage.removeItem(STORAGE_KEYS.analysisResult); },
 };
+
+
+export type UsagiInputDraft = {
+  method: "text" | "image";
+  rawText: string;
+  participants: string[];
+  detectedMode: "direct" | "group" | "unknown";
+  meSpeaker?: string;
+};
+
+const INPUT_DRAFT_KEY = "usagi-input-draft";
+
+export const inputDraftStorage = {
+  read(): UsagiInputDraft | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(INPUT_DRAFT_KEY);
+      return raw ? JSON.parse(raw) as UsagiInputDraft : null;
+    } catch { return null; }
+  },
+  write(value: UsagiInputDraft) {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(INPUT_DRAFT_KEY, JSON.stringify(value));
+  },
+  clear() {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem(INPUT_DRAFT_KEY);
+  },
+};
