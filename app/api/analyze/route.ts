@@ -14,6 +14,8 @@ import {
 import { buildSafetyIdentifier } from "@/lib/safety";
 import { MAX_REQUEST_BYTES, MAX_SINGLE_IMAGE_CHARS, MAX_TOTAL_IMAGE_CHARS, MAX_UPLOAD_IMAGES } from "@/lib/upload-config";
 import { parseChatText } from "@/lib/chat-text";
+import { localeInstruction, type Locale } from "@/lib/i18n";
+import { buildAnalysisFingerprint, getCachedAnalysis, setCachedAnalysis, waitForCachedAnalysis } from "@/lib/request-manager";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -106,9 +108,19 @@ function validateImages(value: unknown): string[] | null {
   return images;
 }
 
-function mapOpenAIError(error: unknown) {
+function localizedError(locale: Locale, key: string) {
+  const messages: Record<Locale, Record<string, string>> = {
+    ko: { invalid_context:"분석 설정값이 올바르지 않습니다.", invalid_images:"대화 캡처가 없거나 이미지 용량이 너무 큽니다. 5장 이하로 다시 올려주세요.", text_too_long:"붙여넣은 대화가 너무 깁니다. 필요한 구간만 나눠주세요.", invalid_text:"카카오톡 복사 형식을 읽지 못했습니다.", choose_me:"텍스트 대화에서 본인을 선택해 주세요.", processing:"같은 대화를 이미 분석하고 있어요.", guard_unavailable:"안전한 분석 연결을 확인하고 있어요.", rate_limit:"분석 요청이 많이 이어졌어요. 잠시 후 다시 시도해 주세요.", daily_budget:"오늘 준비된 분석 사용량에 도달했습니다.", analysis_failed:"분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요." },
+    en: { invalid_context:"The analysis settings are invalid.", invalid_images:"No valid screenshots were found. Upload up to 5 images.", text_too_long:"The pasted chat is too long. Analyze a shorter section.", invalid_text:"I could not read the pasted KakaoTalk format.", choose_me:"Choose which speaker is you.", processing:"The same chat is already being analyzed.", guard_unavailable:"The secure analysis connection is being checked.", rate_limit:"Many analysis requests arrived at once. Please try again shortly.", daily_budget:"Today's prepared analysis capacity has been reached.", analysis_failed:"The analysis could not be completed. Please try again shortly." },
+    ja: { invalid_context:"分析設定が正しくありません。", invalid_images:"有効なスクリーンショットがありません。5枚以内でアップロードしてください。", text_too_long:"貼り付けた会話が長すぎます。必要な部分に分けてください。", invalid_text:"KakaoTalkのコピー形式を読み取れませんでした。", choose_me:"会話の中で自分が誰か選んでください。", processing:"同じ会話をすでに分析しています。", guard_unavailable:"安全な分析接続を確認しています。", rate_limit:"分析リクエストが集中しています。少し後でもう一度お試しください。", daily_budget:"本日分の分析上限に達しました。", analysis_failed:"分析を完了できませんでした。少し後でもう一度お試しください。" },
+    zh: { invalid_context:"分析设置不正确。", invalid_images:"未找到有效截图，请上传不超过5张图片。", text_too_long:"粘贴的对话太长，请分段分析。", invalid_text:"无法读取 KakaoTalk 的复制格式。", choose_me:"请选择对话中哪位是你。", processing:"同一段对话正在分析中。", guard_unavailable:"正在检查安全分析连接。", rate_limit:"分析请求较多，请稍后再试。", daily_budget:"今天可用的分析额度已用完。", analysis_failed:"未能完成分析，请稍后再试。" },
+  };
+  return messages[locale][key] ?? messages.ko[key] ?? messages.ko.analysis_failed;
+}
+
+function mapOpenAIError(error: unknown, locale: Locale) {
   if (!(error instanceof OpenAIError)) {
-    return { status: 500, publicMessage: "분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+    return { status: 500, publicMessage: localizedError(locale, "analysis_failed") };
   }
 
   const code = error.code || error.type || "unknown";
@@ -129,7 +141,7 @@ function mapOpenAIError(error: unknown) {
   if (["output_truncated", "incomplete_response", "invalid_json_output"].includes(code)) {
     return { status: 502, publicMessage: "AI가 마지막 정리를 완성하지 못했습니다. 입력 내용은 유지되니 다시 한 번 분석해 주세요." };
   }
-  return { status: error.status >= 500 ? 502 : 500, publicMessage: "분석을 완료하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+  return { status: error.status >= 500 ? 502 : 500, publicMessage: localizedError(locale, "analysis_failed") };
 }
 
 
@@ -177,38 +189,54 @@ export async function POST(request: Request) {
   }
 
   const clientKey = getClientKey(request);
-  const rate = await consumeRateLimit(clientKey);
-  if (!rate.ok) {
-    const message = rate.reason === "guard_unavailable"
-      ? "현재 안전한 분석 요청 처리를 준비하고 있습니다. 잠시 후 다시 시도해 주세요."
-      : "요청이 너무 빠릅니다. 잠시 후 다시 시도해 주세요.";
-    return NextResponse.json(
-      { error: message },
-      { status: rate.reason === "guard_unavailable" ? 503 : 429, headers: { "Retry-After": String(rate.retryAfter) } },
-    );
-  }
-
   let slotAcquired = false;
+  let slotKey = "";
+  let locale: Locale = "ko";
   try {
-    const rawBody = (await request.json()) as { context?: unknown; images?: unknown; rawText?: unknown; meSpeaker?: unknown };
+    const rawBody = (await request.json()) as { context?: unknown; images?: unknown; rawText?: unknown; meSpeaker?: unknown; locale?: unknown };
     if (request.signal.aborted) throw new AnalysisCancelledError();
 
     const context = validateAndNormalizeContext(rawBody.context);
-    if (!context) return NextResponse.json({ error: "분석 설정값이 올바르지 않습니다. 처음부터 다시 설정해 주세요." }, { status: 400 });
+    locale = typeof rawBody.locale === "string" && ["ko", "en", "ja", "zh"].includes(rawBody.locale) ? rawBody.locale as Locale : "ko";
+    if (!context) return NextResponse.json({ error: localizedError(locale, "invalid_context") }, { status: 400 });
 
     const rawText = typeof rawBody.rawText === "string" ? rawBody.rawText.trim() : "";
     const meSpeaker = typeof rawBody.meSpeaker === "string" ? rawBody.meSpeaker.trim() : "";
     const isTextInput = rawText.length > 0;
     const images = isTextInput ? [] : validateImages(rawBody.images);
-    if (!isTextInput && !images) return NextResponse.json({ error: "대화 캡처가 없거나 이미지 용량이 너무 큽니다. 10장 이하로 다시 올려주세요." }, { status: 400 });
-    if (rawText.length > 120_000) return NextResponse.json({ error: "붙여넣은 대화가 너무 깁니다. 필요한 구간만 나눠서 분석해 주세요." }, { status: 413 });
+    if (!isTextInput && !images) return NextResponse.json({ error: localizedError(locale, "invalid_images") }, { status: 400 });
+    if (rawText.length > 120_000) return NextResponse.json({ error: localizedError(locale, "text_too_long") }, { status: 413 });
 
-    const slot = await acquireAnalysisSlot(clientKey);
-    if (!slot.ok) return NextResponse.json({ error: "이미 분석이 진행 중입니다. 기존 분석이 끝난 뒤 다시 시도해 주세요." }, { status: 409 });
+    const preParsedText = isTextInput ? parseChatText(rawText) : null;
+    if (isTextInput && !preParsedText) return NextResponse.json({ error: localizedError(locale, "invalid_text") }, { status: 422 });
+    if (isTextInput && (!meSpeaker || !preParsedText?.participants.includes(meSpeaker))) {
+      return NextResponse.json({ error: localizedError(locale, "choose_me") }, { status: 400 });
+    }
+
+    const fingerprint = buildAnalysisFingerprint(clientKey, { context, locale, rawText: isTextInput ? rawText : undefined, images: isTextInput ? undefined : images, meSpeaker });
+    slotKey = `analysis:${fingerprint}`;
+    const cached = await getCachedAnalysis<AnalysisResult & { groupAnalysis?: GroupAnalysis }>(fingerprint);
+    if (cached) return NextResponse.json({ result: cached, cached: true });
+
+    const slot = await acquireAnalysisSlot(slotKey);
+    if (!slot.ok) {
+      const completed = await waitForCachedAnalysis<AnalysisResult & { groupAnalysis?: GroupAnalysis }>(fingerprint, 4200);
+      if (completed) return NextResponse.json({ result: completed, cached: true });
+      return NextResponse.json({ status: "processing", code: "processing", error: localizedError(locale, "processing") }, { status: 202, headers: { "Retry-After": "1" } });
+    }
     slotAcquired = true;
 
+    const rate = await consumeRateLimit(clientKey);
+    if (!rate.ok) {
+      const guardUnavailable = rate.reason === "guard_unavailable";
+      return NextResponse.json(
+        { error: localizedError(locale, guardUnavailable ? "guard_unavailable" : "rate_limit"), code: guardUnavailable ? "guard_unavailable" : "client_limit", retryAfter: rate.retryAfter },
+        { status: guardUnavailable ? 503 : 429, headers: { "Retry-After": String(rate.retryAfter) } },
+      );
+    }
+
     const budget = await consumeGlobalBudget();
-    if (!budget.ok) return NextResponse.json({ error: "오늘 준비된 분석 사용량에 도달했습니다. 다음 이용 시간에 다시 시도해 주세요." }, { status: 503 });
+    if (!budget.ok) return NextResponse.json({ error: localizedError(locale, "daily_budget"), code: "daily_budget" }, { status: 503 });
 
     const safetyIdentifier = buildSafetyIdentifier(clientKey);
     const startedAt = Date.now();
@@ -218,11 +246,7 @@ export async function POST(request: Request) {
     let visionUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
 
     if (isTextInput) {
-      const textParsed = parseChatText(rawText);
-      if (!textParsed) return NextResponse.json({ error: "붙여넣은 대화 형식을 읽지 못했습니다. 카카오톡에서 복사한 대화를 그대로 붙여넣어 주세요." }, { status: 422 });
-      if (!meSpeaker || !textParsed.participants.includes(meSpeaker)) {
-        return NextResponse.json({ error: "텍스트 대화에서는 어떤 화자가 본인인지 선택해 주세요." }, { status: 400 });
-      }
+      const textParsed = preParsedText!;
       parsed = {
         conversationType: textParsed.detectedMode === "group" ? "group" : textParsed.detectedMode === "direct" ? "direct" : "unclear",
         messages: textParsed.messages.map((m) => ({
@@ -327,21 +351,30 @@ ${partnerProfile ? `상대 MBTI 참고: ${context.other.mbti} / ${partnerProfile
 
     if (request.signal.aborted) throw new AnalysisCancelledError();
     const analysisStartedAt = Date.now();
-    const analysis = await callOpenAI([{ role: "user", content: [{ type: "input_text", text: narrativePrompt }] }], {
-      model: process.env.OPENAI_ANALYSIS_MODEL || "gpt-5.4-nano",
-      instructions: buildAiFriendInstruction(context),
-      maxOutputTokens: context.mode === "group" ? 900 : 700,
-      jsonSchema: context.mode === "group" ? { name: "usagi_group_narrative", schema: groupNarrativeSchema } : { name: "usagi_narrative", schema: narrativeSchema },
-      safetyIdentifier,
-      signal: request.signal,
-      reasoningEffort: "none",
-    });
+    let analysis: Awaited<ReturnType<typeof callOpenAI>> | null = null;
+    let narrative: Narrative | GroupNarrative | null = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        analysis = await callOpenAI([{ role: "user", content: [{ type: "input_text", text: narrativePrompt }] }], {
+          model: process.env.OPENAI_ANALYSIS_MODEL || "gpt-5.4-nano",
+          instructions: buildAiFriendInstruction(context) + "\n" + localeInstruction(locale) + (attempt === 1 ? "\nThe previous structured response was incomplete. Return only one complete JSON object matching the schema." : ""),
+          maxOutputTokens: context.mode === "group" ? 900 : 700,
+          jsonSchema: context.mode === "group" ? { name: "usagi_group_narrative", schema: groupNarrativeSchema } : { name: "usagi_narrative", schema: narrativeSchema },
+          safetyIdentifier,
+          signal: request.signal,
+          reasoningEffort: "none",
+        });
+        narrative = context.mode === "group" ? parseJsonText<GroupNarrative>(analysis.text) : parseJsonText<Narrative>(analysis.text);
+        break;
+      } catch (error) {
+        const retryable = error instanceof OpenAIError && ["output_truncated", "incomplete_response", "invalid_json_output"].includes(error.code || "");
+        if (!retryable || attempt === 1) throw error;
+        console.warn("[usagi/analyze] retrying final narrative", { code: error.code });
+      }
+    }
+    if (!analysis || !narrative) throw new OpenAIError("AI 응답을 완성하지 못했습니다.", 502, "incomplete_response");
     const analysisMs = Date.now() - analysisStartedAt;
-
     if (request.signal.aborted) throw new AnalysisCancelledError();
-    const narrative = context.mode === "group"
-      ? parseJsonText<GroupNarrative>(analysis.text)
-      : parseJsonText<Narrative>(analysis.text);
 
     let groupAnalysis: GroupAnalysis | undefined;
     if (context.mode === "group") {
@@ -384,6 +417,7 @@ ${partnerProfile ? `상대 MBTI 참고: ${context.other.mbti} / ${partnerProfile
       status: "ok",
     }));
 
+    await setCachedAnalysis(fingerprint, result);
     return NextResponse.json({ result });
   } catch (error) {
     if (error instanceof AnalysisCancelledError || request.signal.aborted) {
@@ -395,10 +429,10 @@ ${partnerProfile ? `상대 MBTI 참고: ${context.other.mbti} / ${partnerProfile
     } else {
       console.error("[usagi/analyze]", error);
     }
-    const mapped = mapOpenAIError(error);
+    const mapped = mapOpenAIError(error, locale);
     const headers = mapped.status === 429 ? { "Retry-After": "20" } : undefined;
     return NextResponse.json({ error: mapped.publicMessage }, { status: mapped.status, headers });
   } finally {
-    if (slotAcquired) await releaseAnalysisSlot(clientKey);
+    if (slotAcquired && slotKey) await releaseAnalysisSlot(slotKey);
   }
 }

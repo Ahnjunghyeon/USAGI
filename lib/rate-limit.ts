@@ -16,8 +16,8 @@ let globalDayStart = 0;
 let globalDayCount = 0;
 let lastCleanup = 0;
 
-const MINUTE_LIMIT = Number(process.env.USAGI_IP_MINUTE_LIMIT || 2);
-const HOUR_LIMIT = Number(process.env.USAGI_IP_HOUR_LIMIT || 5);
+const MINUTE_LIMIT = Number(process.env.USAGI_IP_MINUTE_LIMIT || 5);
+const HOUR_LIMIT = Number(process.env.USAGI_IP_HOUR_LIMIT || 12);
 const DAY_LIMIT = Number(process.env.USAGI_IP_DAILY_LIMIT || 10);
 const GLOBAL_DAY_LIMIT = Number(process.env.USAGI_GLOBAL_DAILY_LIMIT || 100);
 const MEMORY_TTL = 26 * 60 * 60 * 1000;

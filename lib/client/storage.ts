@@ -23,14 +23,28 @@ function writeJson(storage: Storage, key: string, value: unknown) {
 }
 
 export const contextStorage = {
-  read: () => typeof window === "undefined" ? null : readJson<UrIsaiContext>(window.localStorage, STORAGE_KEYS.context),
-  write: (context: UrIsaiContext) => { if (typeof window !== "undefined") writeJson(window.localStorage, STORAGE_KEYS.context, context); },
+  read: () => {
+    if (typeof window === "undefined") return null;
+    const current = readJson<UrIsaiContext>(window.sessionStorage, STORAGE_KEYS.context);
+    if (current) return current;
+    const legacy = readJson<UrIsaiContext>(window.localStorage, STORAGE_KEYS.context);
+    if (legacy) {
+      writeJson(window.sessionStorage, STORAGE_KEYS.context, legacy);
+      window.localStorage.removeItem(STORAGE_KEYS.context);
+    }
+    return legacy;
+  },
+  write: (context: UrIsaiContext) => {
+    if (typeof window === "undefined") return;
+    writeJson(window.sessionStorage, STORAGE_KEYS.context, context);
+    window.localStorage.removeItem(STORAGE_KEYS.context);
+  },
   update: (patch: Partial<UrIsaiContext>) => {
     if (typeof window === "undefined") return null;
-    const current = readJson<UrIsaiContext>(window.localStorage, STORAGE_KEYS.context);
+    const current = readJson<UrIsaiContext>(window.sessionStorage, STORAGE_KEYS.context);
     if (!current) return null;
     const next = { ...current, ...patch };
-    writeJson(window.localStorage, STORAGE_KEYS.context, next);
+    writeJson(window.sessionStorage, STORAGE_KEYS.context, next);
     return next;
   },
 };

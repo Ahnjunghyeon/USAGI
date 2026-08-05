@@ -298,3 +298,24 @@ Vision이 3명 이상을 구분하거나 다른 화자 ID가 2개 이상 감지�
 - Responses API가 `incomplete` 상태를 반환하면 JSON.parse 전에 감지해 원인을 명확하게 처리합니다.
 - 잘못된 structured output은 `OpenAIError`로 정규화해 raw SyntaxError 500 대신 사용자 친화적인 재시도 오류로 처리합니다.
 - 투명 배경 `usagi-guide-bunny.png` 사용을 전제로 `mix-blend-mode`, 외곽 drop-shadow, 배경 효과를 제거했습니다.
+## v0.3.15.5 — Stability & Usability QA Update
+
+- 저장 언어 복원 전 분석 요청 차단 및 Processing 중복 실행 방지
+- 유효성 검사·캐시 확인 후 Rate Limit/예산 차감
+- 동일 요청 fingerprint dedupe와 10분 결과 캐시 연결
+- 분석 취소 시 입력·설정·캡처 유지
+- JSON structured output 실패 시 최종 해석만 1회 자동 재시도
+- 한국어/영어/일본어/중국어 서버 오류 메시지 적용
+- 관계 설정값 sessionStorage 전환 및 기존 localStorage 마이그레이션
+- 사람 정보 기본 접기 UI와 필요 시 수정 기능
+- 캡처 최대 5장, 텍스트/이미지별 처리 연출 타이밍 분리
+- 안경 착용 1회, 마지막 완료 단계만 강한 물방울 모션
+
+## v0.3.15.6 — Processing Stage Runtime Fix
+
+- React 개발 모드 Strict Mode의 effect 재마운트 과정에서 `startedRef`가 true로 남아 두 번째 정상 실행이 차단되던 문제를 수정했습니다.
+- 이 문제로 단계 타이머와 분석 요청이 cleanup된 뒤 재시작되지 않아 1단계에서 영구 정지할 수 있었습니다.
+- 진행 단계 타이머를 API 요청 effect와 분리해 요청 lifecycle과 관계없이 UI가 안정적으로 전환됩니다.
+- 이미지 단계 전환을 1.8초 / 4.3초 / 7.6초로 조정하고 텍스트는 0.9초 / 2.2초 / 3.9초로 단축했습니다.
+- 202 진행 중 응답 polling을 최대 약 30초로 확장하고 `Retry-After`를 반영합니다.
+- 장시간 분석 시 단계가 멈춘 것처럼 보이지 않도록 경과 시간 기반 안내 문구를 추가했습니다.

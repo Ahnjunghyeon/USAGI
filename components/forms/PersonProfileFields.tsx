@@ -4,6 +4,7 @@ import MbtiSelect from "@/components/forms/MbtiSelect";
 import { SelectField } from "@/components/ui/FormControls";
 import { AGE_RANGES, GENDERS } from "@/lib/context";
 import type { MbtiValue } from "@/lib/mbti";
+import { useLocale } from "@/components/LocaleProvider";
 
 type Props = {
   title: string;
@@ -16,11 +17,12 @@ type Props = {
 };
 
 export default function PersonProfileFields({ title, ageRange, gender, mbti, onAgeRangeChange, onGenderChange, onMbtiChange }: Props) {
+  const {t,value}=useLocale();
   return <div className="person-box">
     <strong>{title}</strong>
     <div className="row">
-      <SelectField label="나이대" value={ageRange} options={AGE_RANGES} onChange={onAgeRangeChange} />
-      <SelectField label="성별" value={gender} options={GENDERS} onChange={onGenderChange} />
+      <SelectField label={t("age")} value={ageRange} onChange={onAgeRangeChange}>{AGE_RANGES.map((option)=><option key={option} value={option}>{value(option)}</option>)}</SelectField>
+      <SelectField label={t("gender")} value={gender} onChange={onGenderChange}>{GENDERS.map((option)=><option key={option} value={option}>{value(option)}</option>)}</SelectField>
     </div>
     <MbtiSelect value={mbti} onChange={onMbtiChange} />
   </div>;

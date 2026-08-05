@@ -1,11 +1,5 @@
+"use client";
 import Link from "next/link";
 import type { ReactNode } from "react";
-
-export default function AnalysisStepLayout({ backHref, step, title, description, children }: { backHref: string; step: string; title: string; description: string; children: ReactNode }) {
-  return <main className="shell"><div className="mobile-frame">
-    <div className="mini-nav"><Link className="back" href={backHref} aria-label="이전 단계">←</Link><span className="progress">{step}</span></div>
-    <h1 className="section-title">{title}</h1>
-    <p className="section-copy">{description}</p>
-    {children}
-  </div></main>;
-}
+import { useLocale } from "@/components/LocaleProvider";
+export default function AnalysisStepLayout({ backHref, step, titleKey, descriptionKey, children }: { backHref: string; step: string; titleKey: string; descriptionKey: string; children: ReactNode }) { const {t}=useLocale(); return <main className="shell"><div className="mobile-frame"><div className="mini-nav"><Link className="back" href={backHref} aria-label={t("back")}>←</Link><span className="progress">{step}</span></div><h1 className="section-title">{t(titleKey)}</h1><p className="section-copy">{t(descriptionKey)}</p>{children}</div></main> }

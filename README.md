@@ -145,3 +145,8 @@ AI 친구 프리셋 중복 카드 제거와 모바일 선택 UI QA를 적용했�
 - Responses API가 `incomplete` 상태를 반환하면 JSON.parse 전에 감지해 원인을 명확하게 처리합니다.
 - 잘못된 structured output은 `OpenAIError`로 정규화해 raw SyntaxError 500 대신 사용자 친화적인 재시도 오류로 처리합니다.
 - 투명 배경 `usagi-guide-bunny.png` 사용을 전제로 `mix-blend-mode`, 외곽 drop-shadow, 배경 효과를 제거했습니다.
+
+## v0.3.15.4
+- 한국어 / 영어 / 일본어 / 중국어 Language selector 추가
+- 선택 언어 영구 유지 및 분석 AI 응답 언어 연동
+- 다국어 UI 레이아웃 QA 및 기존 완료/안경 모션 유지

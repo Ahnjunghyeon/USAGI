@@ -124,14 +124,14 @@ button { cursor: pointer; }
 
 
 .analysis-bunny-base{position:absolute;inset:0;width:150px;height:150px;object-fit:contain;display:block;background:transparent;border-radius:0;box-shadow:none;filter:none;mix-blend-mode:normal}
-.analysis-glasses{position:absolute;left:50%;top:78px;width:78px;height:31px;opacity:0;transform:translate(-50%,-50px) scale(.82) rotate(-4deg);animation:glasses-drop-focus 2.8s cubic-bezier(.2,.95,.22,1) infinite;z-index:3;transform-origin:50% 50%}
+.analysis-glasses{position:absolute;left:50%;top:78px;width:78px;height:31px;opacity:0;transform:translate(-50%,-50px) scale(.82) rotate(-4deg);animation:glasses-drop-focus 1.15s cubic-bezier(.2,.95,.22,1) 1 forwards;z-index:3;transform-origin:50% 50%}
 .lens{position:absolute;top:1px;width:33px;height:26px;border:3px solid #202327;border-radius:48% 48% 44% 44%;background:rgba(235,250,244,.10);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
 .lens-left{left:1px}.lens-right{right:1px}.glasses-bridge{position:absolute;left:32px;top:11px;width:14px;height:3px;border-radius:999px;background:#202327}.glasses-arm{position:absolute;top:8px;width:15px;height:3px;border-radius:999px;background:#202327}.glasses-arm-left{left:-9px;transform:rotate(10deg)}.glasses-arm-right{right:-9px;transform:rotate(-10deg)}
 .lens-spark{position:absolute;color:#fff;text-shadow:0 0 5px #fff,0 0 14px #58d77d,0 0 24px #58d77d;opacity:0;pointer-events:none;z-index:4}.spark-one{left:103px;top:76px;font-size:23px;animation:lens-pish 2.8s ease-out infinite}.spark-two{left:119px;top:91px;font-size:13px;animation:lens-pish 2.8s .11s ease-out infinite}
 .processing-mascot.stage-4 .processing-mascot-orbit{filter:none}.processing-mascot.stage-4 .analysis-bunny{animation-duration:2.15s}
 .step{position:relative;overflow:hidden}.step::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--accent-strong);transition:width .45s ease}.step.done::after{width:100%}.step.active::after{width:100%;opacity:.32;animation:step-active-pulse 1.2s ease-in-out infinite}
 @keyframes usagi-focus{0%,100%{transform:translateX(0) rotate(0)}50%{transform:translateX(1.7px) rotate(.45deg)}62%{transform:translateX(-1.8px) rotate(-.5deg)}73%{transform:translateX(1px) rotate(.2deg)}}
-@keyframes glasses-drop-focus{0%,13%{opacity:0;transform:translate(-50%,-52px) scale(.76) rotate(-5deg)}24%{opacity:1;transform:translate(-50%,4px) scale(1.05) rotate(1deg)}29%,77%{opacity:1;transform:translate(-50%,0) scale(1) rotate(0)}88%,100%{opacity:0;transform:translate(-50%,1px) scale(1.02) rotate(0)}}
+@keyframes glasses-drop-focus{0%{opacity:0;transform:translate(-50%,-52px) scale(.76) rotate(-5deg)}55%{opacity:1;transform:translate(-50%,4px) scale(1.05) rotate(1deg)}72%{opacity:1;transform:translate(-50%,-1px) scale(.98) rotate(0)}100%{opacity:1;transform:translate(-50%,0) scale(1) rotate(0)}}
 @keyframes lens-pish{0%,31%{opacity:0;transform:scale(.2) rotate(-28deg)}38%{opacity:1;transform:scale(1.35) rotate(6deg)}48%,100%{opacity:0;transform:scale(.35) rotate(35deg)}}
 @keyframes step-active-pulse{0%,100%{opacity:.18}50%{opacity:.55}}
 @media(prefers-reduced-motion:reduce){.analysis-bunny,.analysis-glasses,.lens-spark,.step.active::after,.guide-bunny img{animation:none}.analysis-glasses{opacity:1;transform:translate(-50%,0) scale(1)}}
@@ -332,4 +332,37 @@ button { cursor: pointer; }
   .step-check{
     animation:none!important;
   }
+}
+
+/* v0.3.15.4 — locale selector & multilingual layout QA */
+.home-brand-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.home-brand-row .brand{flex:1;min-width:0}
+.language-picker{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-top:5px;padding:6px 8px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px)}
+.language-picker>span{font-size:11px;font-weight:800;color:#717980}
+.language-picker select{appearance:auto;border:0;background:transparent;color:var(--text);font:inherit;font-size:12px;font-weight:800;outline:none;cursor:pointer;max-width:104px}
+[lang="en"] .hero-title,[lang="ja"] .hero-title,[lang="zh"] .hero-title{word-break:keep-all}
+[lang="en"] .friend-preset-option,[lang="ja"] .friend-preset-option,[lang="zh"] .friend-preset-option{min-height:84px}
+@media(max-width:420px){.home-brand-row{gap:8px}.language-picker>span{display:none}.language-picker{padding:6px 7px}.language-picker select{max-width:84px}}
+
+/* v0.3.15.5 usability QA */
+.profile-summary-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid #edf0f2}
+.profile-summary-row span{color:#6f7781;font-size:14px;text-align:right;overflow-wrap:anywhere}
+.step.done:not(:nth-child(4)) .step-dot::after{display:none}
+@media(max-width:420px){.profile-summary-row{align-items:flex-start;flex-direction:column;gap:4px}.profile-summary-row span{text-align:left}}
+
+
+/* v0.3.15.6 — processing runtime stability */
+.processing-live-copy{
+  min-height:22px;
+  margin:8px 0 2px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+  line-height:1.45;
+  animation:processing-copy-enter .32s ease both;
+}
+@keyframes processing-copy-enter{
+  from{opacity:.2;transform:translateY(3px)}
+  to{opacity:1;transform:translateY(0)}
 }
