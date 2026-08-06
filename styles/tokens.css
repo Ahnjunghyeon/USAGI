@@ -1,0 +1,35 @@
+:root{
+  --uds-color-bg:#f5f6f8;
+  --uds-color-surface:#ffffff;
+  --uds-color-surface-subtle:#f7f8fa;
+  --uds-color-text:#191f28;
+  --uds-color-text-secondary:#59636f;
+  --uds-color-border:#e5e8eb;
+  --uds-color-primary:#ff6f8f;
+  --uds-color-primary-soft:#fff1f4;
+  --uds-color-success:#17b26a;
+  --uds-color-success-soft:#eafbf2;
+  --uds-radius-sm:12px;
+  --uds-radius-md:16px;
+  --uds-radius-lg:20px;
+  --uds-radius-xl:24px;
+  --uds-space-1:4px;
+  --uds-space-2:8px;
+  --uds-space-3:12px;
+  --uds-space-4:16px;
+  --uds-space-5:20px;
+  --uds-space-6:24px;
+  --uds-space-8:32px;
+  --uds-font-display:32px;
+  --uds-font-title:24px;
+  --uds-font-body:16px;
+  --uds-font-caption:13px;
+  --uds-motion-fast:180ms;
+  --uds-motion-base:200ms;
+  --uds-motion-slow:300ms;
+  --uds-ease:cubic-bezier(.22,1,.36,1);
+  --uds-shadow-sheet:0 24px 80px rgba(15,23,42,.18);
+  --uds-page-inline:20px;
+  --uds-control-height:52px;
+  --uds-focus-ring:0 0 0 3px rgba(255,111,143,.2);
+}

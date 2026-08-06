@@ -1,0 +1,66 @@
+
+/* USAGI v0.4.2 — restrained interaction system */
+:where(button,a,input,select,textarea):focus-visible{
+  outline:none;
+  box-shadow:var(--uds-focus-ring);
+}
+.ui-button{
+  min-height:var(--uds-control-height);
+  border-radius:16px;
+  transition:
+    transform var(--uds-motion-fast) var(--uds-ease),
+    background-color var(--uds-motion-fast) ease,
+    border-color var(--uds-motion-fast) ease,
+    box-shadow var(--uds-motion-fast) ease,
+    opacity var(--uds-motion-fast) ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ui-button:hover:not(:disabled){transform:translateY(-1px)}
+.ui-button:active:not(:disabled){transform:translateY(0) scale(.985)}
+.ui-button:disabled{cursor:not-allowed;opacity:.45}
+.ui-button-primary:hover:not(:disabled){background:#111820;box-shadow:0 8px 20px rgba(15,23,42,.12)}
+.ui-button-secondary:hover:not(:disabled){background:#f8f9fa;border-color:#d9dde2}
+.ui-button-ghost:hover:not(:disabled){background:#f2f4f6}
+
+.uds-card{
+  transition:
+    border-color var(--uds-motion-base) ease,
+    background-color var(--uds-motion-base) ease,
+    transform var(--uds-motion-base) var(--uds-ease);
+}
+.language-trigger,.friend-preset-option,.option,.mbti-feedback button,.text-action{
+  -webkit-tap-highlight-color:transparent;
+  transition:
+    transform var(--uds-motion-fast) var(--uds-ease),
+    background-color var(--uds-motion-fast) ease,
+    border-color var(--uds-motion-fast) ease,
+    color var(--uds-motion-fast) ease;
+}
+.language-trigger:hover,.friend-preset-option:hover,.option:hover{transform:translateY(-1px)}
+.language-trigger:active,.friend-preset-option:active,.option:active{transform:scale(.99)}
+.field{transition:border-color var(--uds-motion-fast) ease,box-shadow var(--uds-motion-fast) ease,background-color var(--uds-motion-fast) ease}
+.field:hover:not(:disabled){border-color:#d7dce2}
+.field:focus{border-color:var(--uds-color-primary);box-shadow:var(--uds-focus-ring)}
+
+/* Decorative bursts are intentionally removed; completion stays informative. */
+.step.done .step-dot::after{display:none!important}
+.step.done .step-dot::before{animation-duration:.44s}
+.uds-reveal{animation:uds-content-in .28s var(--uds-ease) both}
+@keyframes uds-content-in{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}
+}
+@media(hover:none){
+  .ui-button:hover:not(:disabled),
+  .language-trigger:hover,
+  .friend-preset-option:hover,
+  .option:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}

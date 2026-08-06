@@ -1,0 +1,24 @@
+/* USAGI shared component primitives — single ownership */
+.uds-card{background:var(--uds-color-surface);border:1px solid var(--uds-color-border);border-radius:var(--uds-radius-lg);padding:var(--uds-space-5);box-shadow:none}
+.uds-card-soft{background:var(--uds-color-surface-subtle)}
+.uds-card-accent{background:#fff9fa;border-color:#f1dce2}
+.uds-badge{display:inline-flex;align-items:center;min-height:32px;padding:6px 11px;border:1px solid var(--uds-color-border);border-radius:999px;background:#fff;color:#58616d;font-size:12px;font-weight:800;line-height:1.25;white-space:normal;transition:background-color var(--uds-motion-fast) ease,border-color var(--uds-motion-fast) ease}
+.uds-badge-ai{background:var(--uds-color-primary-soft);border-color:#ffd0da;color:#d94d6b}
+.uds-badge-success{background:var(--uds-color-success-soft);border-color:#c9f2db;color:#078647}
+.natural-text{word-break:keep-all;overflow-wrap:normal}
+.natural-text-balance{text-wrap:balance}
+.hero-title{display:grid;gap:3px}
+.hero-title>.natural-text{display:block}
+.section-title-lines{display:grid;gap:2px}
+.section-title-lines>.natural-text{display:block}
+.demo-banner p{margin:10px 0 7px;line-height:1.55}
+.guide-inline-copy{display:grid;gap:5px}
+.guide-inline-copy small{line-height:1.5;color:var(--uds-color-text-secondary)}
+.upload-title{font-size:20px}
+.upload-help{display:grid;gap:3px;margin-top:8px;color:#6b7684;line-height:1.5;text-align:center}
+.upload-selected{margin-top:16px}
+.file-sort-help{margin-bottom:8px}
+.file-actions{display:flex;gap:6px}
+.upload-privacy-copy{color:#59636f;line-height:1.6}
+.stat-value-lines{display:grid!important;gap:2px}
+.mbti-link-copy{display:grid;gap:5px}

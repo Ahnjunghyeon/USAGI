@@ -1,0 +1,39 @@
+
+/* USAGI v0.4.2 — independent product layout system */
+html{scroll-padding-top:env(safe-area-inset-top)}
+body{overflow-x:hidden}
+.shell{
+  width:100%;
+  max-width:760px;
+  min-height:100dvh;
+  margin:0 auto;
+  padding:
+    calc(18px + env(safe-area-inset-top))
+    var(--uds-page-inline)
+    calc(40px + env(safe-area-inset-bottom));
+}
+.mobile-frame{width:100%;max-width:440px;margin:0 auto}
+.uds-page-heading{margin:28px 0 22px}
+.uds-page-heading .section-title{max-width:15ch}
+.uds-page-heading .section-copy{max-width:34ch}
+
+.home-ai-notice{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:12px;
+  margin:0 0 22px;
+  padding:15px;
+  border:1px solid var(--uds-color-border);
+  border-radius:18px;
+  background:var(--uds-color-surface);
+}
+.home-ai-notice-icon{
+  display:grid;place-items:center;width:34px;height:34px;border-radius:11px;
+  background:var(--uds-color-primary-soft);color:#d94d6b;font-size:12px;font-weight:900;
+}
+.home-ai-notice-copy strong{display:block;font-size:14px;line-height:1.4}
+.home-ai-notice-copy p{margin:5px 0 10px;color:var(--uds-color-text-secondary);font-size:12px;line-height:1.55}
+.home-ai-notice-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.home-ai-notice-actions>button{
+  border:0;background:transparent;color:#d94d6b;padding:7px 0;font-size:12px;font-weight:800;cursor:pointer;
+}

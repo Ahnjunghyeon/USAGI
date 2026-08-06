@@ -3,12 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProcessingMascot from "@/components/ProcessingMascot";
-import BrandFeature from "@/components/BrandFeature";
 import { AppButton } from "@/components/ui/Button";
 import { contextStorage, inputDraftStorage, resultStorage, uploadStorage } from "@/lib/client/storage";
 import { useLocale } from "@/components/LocaleProvider";
-
-const stepIcons = ["stealth", "pattern", "data", "focus"] as const;
 
 type ApiPayload = {
   result?: unknown;
@@ -211,19 +208,13 @@ export default function Processing() {
     <ProcessingMascot stage={Math.min(idx, 3)} />
     <div className="processing-live-copy" aria-live="polite">{liveCopy}</div>
 
-    <div className="steps">
+    <div className="steps uds-analysis-steps">
       {texts.map((text, index) => {
         const complete = index < idx;
         const active = index === Math.min(idx, 3) && idx < 4;
-
         return <div className={`step ${complete ? "done" : active ? "active" : ""}`} key={text}>
-          <div className="step-dot">
-            {complete
-              ? <span className="step-check" aria-label={t("complete")}>✓</span>
-              : index + 1}
-          </div>
-          <BrandFeature variant={stepIcons[index]} size={36} />
-          <strong>{text}</strong>
+          <div className="step-dot">{complete ? <span className="step-check" aria-label={t("complete")}>✓</span> : active ? <span className="uds-pulse-dot"/> : index + 1}</div>
+          <div className="uds-step-copy"><strong>{text}</strong><small>{complete ? t("complete") : active ? liveCopy : ""}</small></div>
         </div>;
       })}
     </div>

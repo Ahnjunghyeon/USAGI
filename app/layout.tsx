@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
+import "@/styles/tokens.css";
+import "@/styles/layout.css";
+import "@/styles/components.css";
+import "@/styles/interactions.css";
 import "./globals.css";
+import "@/styles/report.css";
 import LocaleProvider from "@/components/LocaleProvider";
 
 export const metadata: Metadata = {
-  title: "우사기 | 우리 사이 기류",
-  description: "우사기 - 대화를 보여주세요. 함께 살펴볼게요 👀",
+  title: "우사기 | AI 대화 패턴 분석",
+  description: "생성형 AI로 대화 흐름과 상호작용 패턴을 정리하는 참고용 분석 서비스",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

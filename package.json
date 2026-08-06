@@ -1,15 +1,16 @@
 {
   "name": "usagi-phase1",
-  "version": "0.3.15.6",
+  "version": "0.4.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "qa": "npm run typecheck && npm run build",
+    "qa": "npm run qa:i18n && npm run typecheck && npm run build",
     "qa:legacy": "node scripts/check-legacy.mjs",
-    "prebuild": "npm run qa:legacy"
+    "prebuild": "npm run qa:legacy",
+    "qa:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "next": "15.5.18",

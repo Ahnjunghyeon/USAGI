@@ -145,6 +145,23 @@ function mapOpenAIError(error: unknown, locale: Locale) {
 }
 
 
+function replaceInternalAnalysisTerms(value: string): string {
+  return value
+    .replace(/\bdirect turns?(?: with me)?\b/gi, "나와 직접 주고받은 대화")
+    .replace(/\bengagement\b/gi, "대화 참여도")
+    .replace(/\bresponse rate\b/gi, "응답 비율")
+    .replace(/\binteraction score\b/gi, "상호작용 정도");
+}
+
+function softenDefinitiveClaims(value: string): string {
+  return replaceInternalAnalysisTerms(value)
+    .replace(/상대(?:방)?가\s*(?:너|당신|사용자)를?\s*좋아한다(?:고)?/g, "상대가 대화를 긍정적으로 이어가려는 패턴이 보인다")
+    .replace(/(?:분명히|확실히)\s*마음이\s*있(?:다|어)/g, "관심 신호로 해석될 여지는 있다")
+    .replace(/마음이\s*있(?:다|어)(?=[.!?,\s]|$)/g, "관심 신호로 해석될 여지는 있다")
+    .replace(/질투하고\s*있(?:다|어)/g, "질투로도 해석할 수 있으나 현재 대화만으로는 확정하기 어렵다")
+    .replace(/사귀고\s*싶어\s*한(?:다|대)/g, "관계를 더 이어가려는 가능성은 있으나 확정할 수 없다");
+}
+
 function buildConversationSignals(metrics: ReturnType<typeof calculateMetrics>) {
   const signals: string[] = [];
   const balanceGap = Math.abs(metrics.messageBalance.me - metrics.messageBalance.other);
@@ -383,9 +400,9 @@ ${partnerProfile ? `상대 MBTI 참고: ${context.other.mbti} / ${partnerProfile
         participantCount: otherSpeakerIds.size + 1,
         participants: groupParticipantMetrics,
         standoutName: groupNarrative.standoutName ? groupNarrative.standoutName.slice(0, 80) : null,
-        standoutReason: groupNarrative.standoutReason.slice(0, 320),
+        standoutReason: softenDefinitiveClaims(groupNarrative.standoutReason).slice(0, 320),
         participantNotes: Array.isArray(groupNarrative.participantNotes)
-          ? groupNarrative.participantNotes.map((x) => ({ name: String(x.name).slice(0, 80), note: String(x.note).slice(0, 240) } )).slice(0, 4)
+          ? groupNarrative.participantNotes.map((x) => ({ name: String(x.name).slice(0, 80), note: softenDefinitiveClaims(String(x.note)).slice(0, 240) } )).slice(0, 4)
           : [],
       };
     }
@@ -395,9 +412,9 @@ ${partnerProfile ? `상대 MBTI 참고: ${context.other.mbti} / ${partnerProfile
       createdAt: new Date().toISOString(),
       context,
       metrics,
-      summary: narrative.summary.slice(0, 420) || "대화 패턴을 확인했습니다.",
-      highlights: Array.isArray(narrative.highlights) ? narrative.highlights.map((x) => String(x).slice(0, 260)).slice(0, 3) : [],
-      friendComment: narrative.friendComment.slice(0, 220) || "대화가 조금 더 있으면 더 자연스럽게 볼 수 있겠다.",
+      summary: softenDefinitiveClaims(narrative.summary).slice(0, 420) || "대화 패턴을 확인했습니다.",
+      highlights: Array.isArray(narrative.highlights) ? narrative.highlights.map((x) => softenDefinitiveClaims(String(x)).slice(0, 260)).slice(0, 3) : [],
+      friendComment: softenDefinitiveClaims(narrative.friendComment).slice(0, 220) || "대화가 조금 더 있으면 더 자연스럽게 볼 수 있겠다.",
       dataAmount,
       extractedMessageCount: messages.length,
       groupAnalysis,

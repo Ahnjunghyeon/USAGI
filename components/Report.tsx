@@ -1,6 +1,284 @@
 "use client";
-import {useEffect,useMemo,useState} from "react";import Brand from "@/components/Brand";import BrandFeature from "@/components/BrandFeature";import {AppButton,ButtonLink} from "@/components/ui/Button";import {resultStorage,type StoredAnalysisResult} from "@/lib/client/storage";import {MBTI_PROFILES,type MbtiType} from "@/lib/mbti";import {useLocale} from "@/components/LocaleProvider";
-type ReportResult=StoredAnalysisResult;
-function ShareActions({result}:{result:ReportResult}){const {t}=useLocale();const ctx=result.context;const share=async()=>{const standout=result.groupAnalysis?.standoutName?`\n${result.groupAnalysis.standoutName}: ${result.groupAnalysis.standoutReason}`:"";const text=`USAGI\n${result.summary}${standout}\n\n${ctx.aiFriend.name}: ${result.friendComment}`;if(navigator.share)await navigator.share({title:"USAGI",text}).catch(()=>{});else{await navigator.clipboard.writeText(text).catch(()=>{});alert(t("copied"))}};return <div className="bottom-actions action-stack"><AppButton fullWidth onClick={share}>{t("share")}</AppButton><ButtonLink fullWidth href="/analyze">{t("reanalyze")}</ButtonLink></div>}
-function GroupReport({result}:{result:ReportResult}){const {t,value}=useLocale();const ctx=result.context;const group=result.groupAnalysis;return <main className="shell"><div className="mobile-frame"><Brand/><div className="report-context"><span>{t("groupChat")}</span><span>{value(ctx.groupGoal??"전체적으로 봐주세요")}</span><span>{t("detectedPeople",{n:group?.participantCount??0})}</span></div><div className="eyebrow">{t("groupSummary")} · {t("messages",{n:result.extractedMessageCount})} · {t("dataAmount")} {value(result.dataAmount)}</div><h1 className="section-title">{t("groupFlow")}</h1><p className="section-copy">{result.summary}</p>{group?.standoutName&&<section className="group-standout-card"><div className="group-standout-kicker">{t("foundPerson")}</div><div className="group-standout-name">{group.standoutName}</div><p>{group.standoutReason}</p></section>}<section className="insight"><div className="insight-title"><BrandFeature variant="focus" size={42}/><strong>{t("groupObserved")}</strong></div><div className="highlight-list">{result.highlights.map(item=><p key={item}>{item}</p>)}</div></section>{group&&group.participantNotes.length>0&&<section className="metric-card group-people-card"><div className="metric-head"><div><div className="metric-title">{t("peopleFeeling")}</div><div className="metric-sub">{t("peopleFeelingSub")}</div></div></div><div className="group-person-list">{group.participantNotes.map(item=><div className="group-person-row" key={`${item.name}-${item.note}`}><strong>{item.name}</strong><span>{item.note}</span></div>)}</div></section>}<section className="friend-card"><div className="friend-header"><div><div className="friend-label"><BrandFeature variant="pattern" size={34}/><span>{ctx.aiFriend.name}{t("friendWord")}</span></div><div className="friend-meta">{value(ctx.aiFriend.ageRange)} · {value(ctx.aiFriend.gender)} · {ctx.aiFriend.mbti}</div></div><span className="friend-badge">{t("aiFriend")}</span></div><p className="friend-quote">“{result.friendComment}”</p><div className="friend-tip">{t("groupFriendTip")}</div></section><div className="notice result-notice">{t("groupNotice")}</div><ShareActions result={result}/></div></main>}
-export default function Report(){const {t,value,locale}=useLocale();const [result,setResult]=useState<ReportResult|null>(null);const [mbtiFeedback,setMbtiFeedback]=useState<"similar"|"different"|null>(null);useEffect(()=>{setResult(resultStorage.read() as ReportResult|null)},[]);const profile=useMemo(()=>result&&result.context.mode!=="group"&&result.context.other.mbti!=="모름"?MBTI_PROFILES[result.context.other.mbti as MbtiType]:null,[result]);if(!result)return <main className="shell"><div className="mobile-frame"><Brand/><div className="empty-result"><h1>{t("reportNoResult")}</h1><p>{t("reportNoResultSub")}</p><ButtonLink href="/analyze" variant="primary">{t("start")}</ButtonLink></div></div></main>;if(result.context.mode==="group")return <GroupReport result={result}/>;const {context:ctx,metrics}=result;return <main className="shell"><div className="mobile-frame"><Brand/><div className="report-context"><span>{value(ctx.relationship)}</span><span>{value(ctx.duration)}</span><span>{value(ctx.goal)}</span><span>{t("other")} {value(ctx.other.ageRange)} · {value(ctx.other.gender)} · {ctx.other.mbti}</span></div><div className="eyebrow">{t("analysisSummary")} · {t("messages",{n:result.extractedMessageCount})} · {t("dataAmount")} {value(result.dataAmount)}</div><h1 className="section-title">{t("currentFlow")}</h1><p className="section-copy">{result.summary}</p><section className="metric-card"><div className="metric-head"><div><div className="metric-title">{t("balance")}</div><div className="metric-sub">{t("balanceSub")}</div></div><strong>{metrics.messageBalance.me} : {metrics.messageBalance.other}</strong></div><div className="balance" style={{gridTemplateColumns:`${Math.max(1,metrics.messageBalance.me)}fr ${Math.max(1,metrics.messageBalance.other)}fr`}}><div/><div/></div><div className="metric-foot">{t("me")} {metrics.messageCount.me} · {t("other")} {metrics.messageCount.other}</div></section><section className="metric-card"><div className="metric-head"><div><div className="metric-title">{t("questionFreq")}</div><div className="metric-sub">{t("questionSub")}</div></div><strong>{t("me")} {metrics.questionCount.me} · {t("other")} {metrics.questionCount.other}</strong></div></section><section className="metric-card"><div className="metric-head"><div><div className="metric-title">{t("avgLength")}</div><div className="metric-sub">{t("avgLengthSub")}</div></div><strong>{t("me")} {metrics.averageMessageLength.me} · {t("other")} {metrics.averageMessageLength.other}</strong></div></section><section className="insight"><div className="insight-title"><BrandFeature variant="focus" size={42}/><strong>{t("observed")}</strong></div><div className="highlight-list">{result.highlights.map(item=><p key={item}>{item}</p>)}</div></section><section className="friend-card"><div className="friend-header"><div><div className="friend-label"><BrandFeature variant="pattern" size={34}/><span>{ctx.aiFriend.name}{t("friendWord")}</span></div><div className="friend-meta">{value(ctx.aiFriend.ageRange)} · {value(ctx.aiFriend.gender)} · {ctx.aiFriend.mbti}</div></div><span className="friend-badge">{t("aiFriend")}</span></div><p className="friend-quote">“{result.friendComment}”</p><div className="friend-tip">{t("friendTip")}</div></section>{profile&&<section className="metric-card mbti-person-card"><div className="metric-head"><div><div className="metric-title metric-title-with-icon"><BrandFeature variant="relation" size={38}/><span>{ctx.other.mbti}</span></div><div className="metric-sub">{t("mbtiReference")}</div></div></div>{locale==="ko"&&<><p className="mbti-person-copy">{profile.feature} {profile.conversationStyle}</p><div className="mbti-tag-row">{profile.strengths.map(item=><span key={item}>{item}</span>)}</div><div className="mbti-caution"><strong>{t("mbtiCaution")}</strong><span>{profile.cautions.join(" · ")}</span></div></>}<p className="mbti-link-copy"><strong>{t("inThisAnalysis")}</strong><br/>{t("mbtiNote")}</p><div className="mbti-feedback"><button type="button" className={mbtiFeedback==="similar"?"selected":""} onClick={()=>setMbtiFeedback("similar")}>{t("similar")}</button><button type="button" className={mbtiFeedback==="different"?"selected":""} onClick={()=>setMbtiFeedback("different")}>{t("different")}</button></div><div className="mbti-more"><ButtonLink href="/analyze" variant="ghost" size="sm" className="mbti-more-link">{t("moreChat")}</ButtonLink></div></section>}<div className="notice result-notice">{t("reportNotice")}</div><ShareActions result={result}/></div></main>}
+
+import { useEffect, useMemo, useState } from "react";
+import Brand from "@/components/Brand";
+import BrandFeature from "@/components/BrandFeature";
+import ResultHeader from "@/components/report/ResultHeader";
+import BalanceCard from "@/components/report/BalanceCard";
+import Card from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
+import { AppButton, ButtonLink } from "@/components/ui/Button";
+import { resultStorage, type StoredAnalysisResult } from "@/lib/client/storage";
+import { MBTI_PROFILES, type MbtiType } from "@/lib/mbti";
+import { useLocale } from "@/components/LocaleProvider";
+
+type ReportResult = StoredAnalysisResult;
+
+function ShareActions({ result }: { result: ReportResult }) {
+  const { t } = useLocale();
+  const ctx = result.context;
+
+  const share = async () => {
+    const standout = result.groupAnalysis?.standoutName
+      ? `\n${result.groupAnalysis.standoutName}: ${result.groupAnalysis.standoutReason}`
+      : "";
+    const text = `USAGI · AI RESULT\n${result.summary}${standout}\n\n${ctx.aiFriend.name}: ${result.friendComment}\n\nAI-generated reference analysis; it does not verify feelings or intent.`;
+
+    if (navigator.share) {
+      await navigator.share({ title: "USAGI", text }).catch(() => {});
+      return;
+    }
+
+    await navigator.clipboard.writeText(text).catch(() => {});
+    alert(t("copied"));
+  };
+
+  return (
+    <div className="result-actions" aria-label="결과 작업">
+      <AppButton fullWidth onClick={share}>{t("share")}</AppButton>
+      <ButtonLink fullWidth href="/analyze">{t("reanalyze")}</ButtonLink>
+    </div>
+  );
+}
+
+function SectionHeading({
+  icon,
+  title,
+  description,
+}: {
+  icon?: "focus" | "relation" | "pattern";
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="result-section-heading">
+      {icon && <BrandFeature variant={icon} size={30} />}
+      <div>
+        <h2>{title}</h2>
+        {description && <p>{description}</p>}
+      </div>
+    </div>
+  );
+}
+
+function FriendCard({ result, group = false }: { result: ReportResult; group?: boolean }) {
+  const { t, value } = useLocale();
+  const ctx = result.context;
+
+  return (
+    <Card tone="accent" className="friend-card result-card uds-reveal">
+      <div className="friend-header">
+        <div className="friend-identity">
+          <div className="friend-label">
+            <BrandFeature variant="pattern" size={30} />
+            <span>{ctx.aiFriend.name}{t("friendWord")}</span>
+          </div>
+          <div className="friend-meta">
+            {value(ctx.aiFriend.ageRange)} · {value(ctx.aiFriend.gender)} · {ctx.aiFriend.mbti}
+          </div>
+        </div>
+        <Badge tone="ai">{t("aiFriend")}</Badge>
+      </div>
+
+      <blockquote className="friend-quote">“{result.friendComment}”</blockquote>
+      <p className="friend-tip">{group ? t("groupFriendTip") : t("friendTip")}</p>
+    </Card>
+  );
+}
+
+function HighlightSection({ title, items }: { title: string; items: string[] }) {
+  return (
+    <section className="result-plain-section uds-reveal">
+      <SectionHeading icon="focus" title={title} />
+      <div className="highlight-list">
+        {items.map((item) => <p key={item}>{item}</p>)}
+      </div>
+    </section>
+  );
+}
+
+function GroupReport({ result }: { result: ReportResult }) {
+  const { t, value } = useLocale();
+  const ctx = result.context;
+  const group = result.groupAnalysis;
+  const tags = [
+    t("groupChat"),
+    value(ctx.groupGoal ?? "전체적으로 봐주세요"),
+    t("detectedPeople", { n: group?.participantCount ?? 0 }),
+  ];
+  const meta = `${t("groupSummary")} · ${t("messages", { n: result.extractedMessageCount })} · ${t("dataAmount")} ${value(result.dataAmount)}`;
+
+  return (
+    <main className="shell report-shell">
+      <div className="mobile-frame report-frame">
+        <Brand />
+        <ResultHeader tags={tags} meta={meta} title={t("groupFlow")} summary={result.summary} />
+
+        {group?.standoutName && (
+          <Card tone="accent" className="group-standout-card result-card uds-reveal">
+            <span className="group-standout-kicker">{t("foundPerson")}</span>
+            <h2 className="group-standout-name">{group.standoutName}</h2>
+            <p>{group.standoutReason}</p>
+          </Card>
+        )}
+
+        <HighlightSection title={t("groupObserved")} items={result.highlights} />
+
+        {group && group.participantNotes.length > 0 && (
+          <section className="result-plain-section group-people-section uds-reveal">
+            <SectionHeading title={t("peopleFeeling")} description={t("peopleFeelingSub")} />
+            <div className="group-person-list">
+              {group.participantNotes.map((item) => (
+                <div className="group-person-row" key={`${item.name}-${item.note}`}>
+                  <strong>{item.name}</strong>
+                  <span>{item.note}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <FriendCard result={result} group />
+        <div className="notice result-notice uds-reveal">{t("groupNotice")}</div>
+        <ShareActions result={result} />
+      </div>
+    </main>
+  );
+}
+
+export default function Report() {
+  const { t, value, locale } = useLocale();
+  const [result, setResult] = useState<ReportResult | null>(null);
+  const [mbtiFeedback, setMbtiFeedback] = useState<"similar" | "different" | null>(null);
+
+  useEffect(() => setResult(resultStorage.read() as ReportResult | null), []);
+
+  const profile = useMemo(
+    () =>
+      result &&
+      result.context.mode !== "group" &&
+      result.context.other.mbti !== "모름"
+        ? MBTI_PROFILES[result.context.other.mbti as MbtiType]
+        : null,
+    [result],
+  );
+
+  if (!result) {
+    return (
+      <main className="shell">
+        <div className="mobile-frame">
+          <Brand />
+          <div className="empty-result">
+            <h1>{t("reportNoResult")}</h1>
+            <p>{t("reportNoResultSub")}</p>
+            <ButtonLink href="/analyze" variant="primary">{t("start")}</ButtonLink>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (result.context.mode === "group") return <GroupReport result={result} />;
+
+  const { context: ctx, metrics } = result;
+  const tags = [
+    value(ctx.relationship),
+    value(ctx.duration),
+    value(ctx.goal),
+    `${t("other")} ${value(ctx.other.ageRange)} · ${value(ctx.other.gender)} · ${ctx.other.mbti}`,
+  ];
+  const meta = `${t("analysisSummary")} · ${t("messages", { n: result.extractedMessageCount })} · ${t("dataAmount")} ${value(result.dataAmount)}`;
+
+  return (
+    <main className="shell report-shell">
+      <div className="mobile-frame report-frame">
+        <Brand />
+        <ResultHeader tags={tags} meta={meta} title={t("currentFlow")} summary={result.summary} />
+
+        <BalanceCard
+          title={t("balance")}
+          subtitle={t("balanceSub")}
+          meLabel={t("me")}
+          otherLabel={t("other")}
+          mePercent={metrics.messageBalance.me}
+          otherPercent={metrics.messageBalance.other}
+          meCount={metrics.messageCount.me}
+          otherCount={metrics.messageCount.other}
+        />
+
+        <div className="result-stat-grid uds-reveal">
+          <Card className="result-stat-card">
+            <span>{t("questionFreq")}</span>
+            <strong className="stat-value-lines"><span>{t("me")} {metrics.questionCount.me}</span><span>{t("other")} {metrics.questionCount.other}</span></strong>
+            <small>{t("questionSub")}</small>
+          </Card>
+          <Card className="result-stat-card">
+            <span>{t("avgLength")}</span>
+            <strong className="stat-value-lines"><span>{t("me")} {metrics.averageMessageLength.me}</span><span>{t("other")} {metrics.averageMessageLength.other}</span></strong>
+            <small>{t("avgLengthSub")}</small>
+          </Card>
+        </div>
+
+        <HighlightSection title={t("observed")} items={result.highlights} />
+        <FriendCard result={result} />
+
+        {profile && (
+          <Card className="mbti-person-card result-card uds-reveal">
+            <div className="result-card-head">
+              <div>
+                <div className="metric-title metric-title-with-icon">
+                  <BrandFeature variant="relation" size={34} />
+                  <span>{ctx.other.mbti}</span>
+                </div>
+                <p>{t("mbtiReference")}</p>
+              </div>
+            </div>
+
+            {locale === "ko" && (
+              <>
+                <p className="mbti-person-copy">{profile.feature} {profile.conversationStyle}</p>
+                <div className="mbti-tag-row">
+                  {profile.strengths.map((item) => <span key={item}>{item}</span>)}
+                </div>
+                <div className="mbti-caution">
+                  <strong>{t("mbtiCaution")}</strong>
+                  <span>{profile.cautions.join(" · ")}</span>
+                </div>
+              </>
+            )}
+
+            <p className="mbti-link-copy">
+              <strong>{t("inThisAnalysis")}</strong><span>{t("mbtiNote")}</span>
+            </p>
+
+            <div className="mbti-feedback">
+              <button
+                type="button"
+                className={mbtiFeedback === "similar" ? "selected" : ""}
+                onClick={() => setMbtiFeedback("similar")}
+              >
+                {t("similar")}
+              </button>
+              <button
+                type="button"
+                className={mbtiFeedback === "different" ? "selected" : ""}
+                onClick={() => setMbtiFeedback("different")}
+              >
+                {t("different")}
+              </button>
+            </div>
+
+            <div className="mbti-more">
+              <ButtonLink href="/analyze" variant="ghost" size="sm" className="mbti-more-link">
+                {t("moreChat")}
+              </ButtonLink>
+            </div>
+          </Card>
+        )}
+
+        <div className="notice result-notice uds-reveal">{t("reportNotice")}</div>
+        <ShareActions result={result} />
+      </div>
+    </main>
+  );
+}

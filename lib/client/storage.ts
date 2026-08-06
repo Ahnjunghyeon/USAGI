@@ -39,6 +39,11 @@ export const contextStorage = {
     writeJson(window.sessionStorage, STORAGE_KEYS.context, context);
     window.localStorage.removeItem(STORAGE_KEYS.context);
   },
+  clear: () => {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.removeItem(STORAGE_KEYS.context);
+    window.localStorage.removeItem(STORAGE_KEYS.context);
+  },
   update: (patch: Partial<UrIsaiContext>) => {
     if (typeof window === "undefined") return null;
     const current = readJson<UrIsaiContext>(window.sessionStorage, STORAGE_KEYS.context);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BottomSheet from "@/components/ui/BottomSheet";
 import { useRouter } from "next/navigation";
 import PersonProfileFields from "@/components/forms/PersonProfileFields";
 import MbtiSelect from "@/components/forms/MbtiSelect";
@@ -40,6 +41,7 @@ export default function DetailsForm() {
   const [friendMbti, setFriendMbti] = useState<MbtiValue>("ENTP");
   const [friendPersona, setFriendPersona] = useState(getAiFriendPreset("custom").persona);
   const [showPeopleInfo, setShowPeopleInfo] = useState(false);
+  const [showFriendSheet, setShowFriendSheet] = useState(false);
 
   useEffect(() => {
     const nextInput = inputDraftStorage.read();
@@ -73,7 +75,7 @@ export default function DetailsForm() {
   };
 
   return <>
-    <div className="guide-inline"><div><strong>{t("detailsGuide")}</strong><br/><small>{t("detailsGuideSub")}</small></div></div>
+    <div className="guide-inline"><div className="guide-inline-copy"><strong>{t("detailsGuide")}</strong><small>{t("detailsGuideSub")}</small></div></div>
 
     {input?.method === "text" && input.participants.length > 1 && <section className="form-card stack">
       <SelectField label={t("meWho")} value={meSpeaker} options={["", ...input.participants]} onChange={setMeSpeaker} />
@@ -95,11 +97,12 @@ export default function DetailsForm() {
 
     <section className="form-card stack friend-settings">
       <div><div className="card-kicker">{t("aiFriendSettings")}</div><h2 className="form-title">{t("chooseFriend")}</h2><p className="form-help">{t("chooseFriendHelp")}</p></div>
-      <div className="friend-preset-grid" role="list">
-        {AI_FRIEND_PRESETS.map((preset) => <button type="button" role="listitem" aria-pressed={friendPresetId === preset.id} className={`friend-preset-option ${friendPresetId === preset.id ? "selected" : ""}`} onClick={() => selectFriendPreset(preset.id)} key={preset.id}>
+      <button type="button" className="selected-friend-summary" onClick={() => setShowFriendSheet(true)}><img src={getAiFriendPreset(friendPresetId).icon} alt="" width={52} height={52}/><span><strong>{presetI18n[locale]?.[friendPresetId]?.label ?? getAiFriendPreset(friendPresetId).label}</strong><small>{presetI18n[locale]?.[friendPresetId]?.note ?? getAiFriendPreset(friendPresetId).note}</small></span><b>›</b></button>
+      <BottomSheet open={showFriendSheet} onClose={() => setShowFriendSheet(false)} title={t("chooseFriend")} description={t("chooseFriendHelp")}><div className="friend-preset-grid" role="list">
+        {AI_FRIEND_PRESETS.map((preset) => <button type="button" role="listitem" aria-pressed={friendPresetId === preset.id} className={`friend-preset-option ${friendPresetId === preset.id ? "selected" : ""}`} onClick={() => {selectFriendPreset(preset.id);setShowFriendSheet(false)}} key={preset.id}>
           <img src={preset.icon} alt="" width={46} height={46}/><span><strong>{(presetI18n[locale]?.[preset.id]?.label ?? preset.label)}{preset.id !== "custom" ? ` · ${preset.mbti}` : ""}</strong><small>{preset.id === "custom" ? t("directFriendTone") : `${value(preset.ageRange)} · ${value(preset.gender)}`}</small>{preset.id !== "custom" && <small className="friend-preset-note">{presetI18n[locale]?.[preset.id]?.note ?? preset.note}</small>}</span>{friendPresetId === preset.id && <span className="friend-preset-check" aria-hidden="true">✓</span>}
         </button>)}
-      </div>
+      </div></BottomSheet>
       {friendPresetId === "custom" ? <>
         <div className="friend-custom-fields"><TextField label={t("friendName")} value={friendName} onChange={setFriendName} maxLength={20} /><div className="row"><SelectField label={t("age")} value={friendAge} onChange={setFriendAge}>{AGE_RANGES.map(o=><option key={o} value={o}>{value(o)}</option>)}</SelectField><SelectField label={t("gender")} value={friendGender} onChange={setFriendGender}>{GENDERS.map(o=><option key={o} value={o}>{value(o)}</option>)}</SelectField></div><MbtiSelect value={friendMbti} onChange={setFriendMbti} label={t("friendMbti")} /></div>
         <div className="friend-persona"><strong>{t("directFriendTone")}</strong><span>{locale === "ko" ? friendPersona : (presetI18n[locale]?.[friendPresetId]?.note ?? friendPersona)}</span></div>
