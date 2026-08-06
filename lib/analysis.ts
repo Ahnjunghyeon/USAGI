@@ -14,18 +14,44 @@ export type ConversationMetrics = {
   laughterCount: Record<Speaker, number>;
   emojiLikeCount: Record<Speaker, number>;
 };
+export type AnalysisSource = {
+  inputType: "text" | "image";
+  parser: "kakao" | "generic" | "vision";
+  confidence: "high" | "medium" | "low";
+  participantNames: string[];
+  meBubbleSide?: "right" | "left" | "auto" | "unclear";
+  warnings: string[];
+};
+
 export type AnalysisResult = {
-  id: string; createdAt: string; context: UrIsaiContext; metrics: ConversationMetrics;
-  summary: string; highlights: string[]; friendComment: string;
-  dataAmount: "적음" | "보통" | "충분"; extractedMessageCount: number;
+  id: string;
+  createdAt: string;
+  context: UrIsaiContext;
+  metrics: ConversationMetrics;
+  summary: string;
+  highlights: string[];
+  friendComment: string;
+  dataAmount: "적음" | "보통" | "충분";
+  extractedMessageCount: number;
+  source?: AnalysisSource;
 };
 const pct=(v:number,t:number)=>t>0?Math.round((v/t)*100):0;
 const round1=(v:number)=>Math.round(v*10)/10;
-function countQuestions(messages:NormalizedMessage[],speaker:Speaker){return messages.filter((m)=>m.speaker===speaker&&(/[?？]/u.test(m.text)||/(뭐|왜|어때|언제|어디|누구|어떻게|맞아|괜찮아|했어|할래|갈래|볼래|먹을래)\s*$/u.test(m.text.trim()))).length}
+const LAUGHTER_PATTERN=/(?:ㅋ{2,}|ㅎ{2,}|\b(?:lol|lmao|rofl)\b|ha(?:ha)+|he(?:he)+|w{2,}|笑+|哈{2,}|呵{2,}|嘿{2,})/giu;
+function isQuestionText(text:string){
+  const trimmed=text.trim();
+  if(/[?？]/u.test(trimmed))return true;
+  if(/(뭐|왜|어때|언제|어디|누구|어떻게|맞아|괜찮아|했어|할래|갈래|볼래|먹을래)\s*$/u.test(trimmed))return true;
+  if(/^(?:who|what|why|when|where|how|do|does|did|are|is|was|were|can|could|would|will|should)\b/iu.test(trimmed))return true;
+  if(/(?:ですか|ますか|なの|のかな|かな|どう|なに|何|いつ|どこ|誰|なぜ|なんで)[。！!]*$/u.test(trimmed))return true;
+  return /(?:吗|嗎|呢|什么|什麼|为什么|為什麼|怎么|怎麼|谁|誰|哪(?:里|裡)?|什么时候|什麼時候)[。！!]*$/u.test(trimmed);
+}
+function countLaughter(text:string){return(text.match(LAUGHTER_PATTERN)??[]).length}
+function countQuestions(messages:NormalizedMessage[],speaker:Speaker){return messages.filter((m)=>m.speaker===speaker&&isQuestionText(m.text)).length}
 function consecutiveAverage(messages:NormalizedMessage[],speaker:Speaker){const runs:number[]=[];let current=0;for(const m of messages){if(m.speaker===speaker)current++;else if(current){runs.push(current);current=0}}if(current)runs.push(current);return runs.length?round1(runs.reduce((a,b)=>a+b,0)/runs.length):0}
 export function calculateMetrics(messages:NormalizedMessage[]):ConversationMetrics{
   const messageCount={me:0,other:0};const characterCount={me:0,other:0};const laughterCount={me:0,other:0};const emojiLikeCount={me:0,other:0};
-  for(const m of messages){const s=m.speaker;messageCount[s]++;characterCount[s]+=m.text.replace(/\s/g,"").length;laughterCount[s]+=(m.text.match(/(?:ㅋ{2,}|ㅎ{2,})/g)??[]).length;emojiLikeCount[s]+=(m.text.match(/[😀-🙏🌀-🫶❤♥♡💕💗💖💘💙💚💛🖤🤍]+/gu)??[]).length}
+  for(const m of messages){const s=m.speaker;messageCount[s]++;characterCount[s]+=m.text.replace(/\s/g,"").length;laughterCount[s]+=countLaughter(m.text);emojiLikeCount[s]+=(m.text.match(/[😀-🙏🌀-🫶❤♥♡💕💗💖💘💙💚💛🖤🤍]+/gu)??[]).length}
   const totalMessages=messageCount.me+messageCount.other;const questionCount={me:countQuestions(messages,"me"),other:countQuestions(messages,"other")};
   return {totalMessages,messageCount,messageBalance:{me:pct(messageCount.me,totalMessages),other:pct(messageCount.other,totalMessages)},questionCount,questionRatio:{me:messageCount.me?pct(questionCount.me,messageCount.me):0,other:messageCount.other?pct(questionCount.other,messageCount.other):0},characterCount,averageMessageLength:{me:messageCount.me?round1(characterCount.me/messageCount.me):0,other:messageCount.other?round1(characterCount.other/messageCount.other):0},consecutiveMessageAverage:{me:consecutiveAverage(messages,"me"),other:consecutiveAverage(messages,"other")},laughterCount,emojiLikeCount};
 }
@@ -67,7 +93,7 @@ export type GroupAwareAnalysisResult = AnalysisResult & {
 };
 
 function groupQuestion(text: string) {
-  return /[?？]/u.test(text) || /(뭐|왜|어때|언제|어디|누구|어떻게|맞아|괜찮아|했어|할래|갈래|볼래|먹을래)\s*$/u.test(text.trim());
+  return isQuestionText(text);
 }
 
 export function calculateGroupParticipantMetrics(messages: GroupMessage[]): GroupParticipantMetric[] {
@@ -87,7 +113,7 @@ export function calculateGroupParticipantMetrics(messages: GroupMessage[]): Grou
     };
     current.messageCount += 1;
     if (groupQuestion(m.text)) current.questionCount += 1;
-    current.laughterCount += (m.text.match(/(?:ㅋ{2,}|ㅎ{2,})/g) ?? []).length;
+    current.laughterCount += countLaughter(m.text);
     byId.set(m.speakerId, current);
   }
 

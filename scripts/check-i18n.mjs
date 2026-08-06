@@ -1,15 +1,25 @@
-import fs from "node:fs";
-const source = fs.readFileSync(new URL("../lib/i18n.ts", import.meta.url), "utf8");
-const blocks = Object.fromEntries(["KO","EN","JA","ZH"].map((name) => {
-  const start = source.indexOf(`const ${name}`);
-  const next = ["KO","EN","JA","ZH"].map((n)=>source.indexOf(`const ${n}`, start+1)).filter((v)=>v>start);
-  const end = next.length ? Math.min(...next) : source.indexOf("const DICTS", start);
-  return [name, source.slice(start, end)];
-}));
-const keys = (text) => new Set([...text.matchAll(/(?:^|[,{]\s*)([A-Za-z][A-Za-z0-9]*)\s*:/gm)].map((m)=>m[1]).filter((k)=>!['value','label','short'].includes(k)));
-const ko = keys(blocks.KO);
-const en = keys(blocks.EN);
-const missing = [...ko].filter((key)=>!en.has(key));
-if (missing.length) { console.error(`[USAGI i18n] EN missing keys: ${missing.join(', ')}`); process.exit(1); }
-for (const key of ['step1Desc','parseOk']) { if (/제거 예정|as any/.test(blocks.KO)) { console.error('[USAGI i18n] temporary copy/type remains'); process.exit(1); } }
-console.log(`[USAGI i18n] ${ko.size} base keys verified; EN synchronized; JA/ZH explicit UX overrides enabled`);
+import { KO, EN, JA, ZH } from "../lib/i18n.ts";
+
+const dictionaries = { KO, EN, JA, ZH };
+const baseKeys = Object.keys(KO).sort();
+const problems = [];
+for (const [name, dictionary] of Object.entries(dictionaries)) {
+  const keys = Object.keys(dictionary).sort();
+  const missing = baseKeys.filter((key) => !keys.includes(key));
+  const extra = keys.filter((key) => !baseKeys.includes(key));
+  const blank = keys.filter((key) => typeof dictionary[key] !== "string" || dictionary[key].trim().length === 0);
+  if (missing.length) problems.push(`${name} missing: ${missing.join(", ")}`);
+  if (extra.length) problems.push(`${name} extra: ${extra.join(", ")}`);
+  if (blank.length) problems.push(`${name} blank: ${blank.join(", ")}`);
+}
+for (const [name, dictionary] of Object.entries(dictionaries)) {
+  for (const [key, value] of Object.entries(dictionary)) {
+    if (/<br\s*\/?\s*>/i.test(value)) problems.push(`${name}.${key} contains HTML line break`);
+    if (/\n/.test(value)) problems.push(`${name}.${key} contains forced line break`);
+  }
+}
+if (problems.length) {
+  console.error("[USAGI i18n] failed\n" + problems.map((item) => `- ${item}`).join("\n"));
+  process.exit(1);
+}
+console.log(`[USAGI i18n] ${baseKeys.length} keys × 4 locales synchronized`);

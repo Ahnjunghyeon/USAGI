@@ -16,12 +16,17 @@ let globalDayStart = 0;
 let globalDayCount = 0;
 let lastCleanup = 0;
 
-const MINUTE_LIMIT = Number(process.env.USAGI_IP_MINUTE_LIMIT || 5);
-const HOUR_LIMIT = Number(process.env.USAGI_IP_HOUR_LIMIT || 12);
-const DAY_LIMIT = Number(process.env.USAGI_IP_DAILY_LIMIT || 10);
-const GLOBAL_DAY_LIMIT = Number(process.env.USAGI_GLOBAL_DAILY_LIMIT || 100);
+function positiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : fallback;
+}
+
+const MINUTE_LIMIT = positiveInt(process.env.USAGI_IP_MINUTE_LIMIT, 5);
+const HOUR_LIMIT = positiveInt(process.env.USAGI_IP_HOUR_LIMIT, 12);
+const DAY_LIMIT = positiveInt(process.env.USAGI_IP_DAILY_LIMIT, 10);
+const GLOBAL_DAY_LIMIT = positiveInt(process.env.USAGI_GLOBAL_DAILY_LIMIT, 100);
 const MEMORY_TTL = 26 * 60 * 60 * 1000;
-const ACTIVE_TTL_SECONDS = 90;
+const ACTIVE_TTL_SECONDS = positiveInt(process.env.USAGI_ACTIVE_TTL_SECONDS, 90);
 
 function nowBucket(now: number, sizeMs: number) { return Math.floor(now / sizeMs) * sizeMs; }
 function dayBucket(now: number) { return nowBucket(now, 86_400_000); }
@@ -177,4 +182,21 @@ export async function consumeGlobalBudget() {
     if (requiresDistributedGuard()) return { ok: false, limit: GLOBAL_DAY_LIMIT };
     return { ok: true, limit: GLOBAL_DAY_LIMIT };
   }
+}
+
+export async function isAnalysisActive(key: string) {
+  const safeKey = encodeURIComponent(key).slice(0, 160);
+  if (hasDistributedRateLimit()) {
+    try {
+      const response = await upstashCommand(["EXISTS", `usagi:active:${safeKey}`]);
+      return Number(response?.result ?? 0) > 0;
+    } catch (error) {
+      console.error("[usagi/rate-limit] active status failed", error);
+      return false;
+    }
+  }
+  const now = Date.now();
+  cleanupMemory(now);
+  const active = activeLocks.get(key);
+  return Boolean(active && active.expiresAt > now);
 }

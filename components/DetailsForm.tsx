@@ -22,7 +22,7 @@ const presetI18n: Record<string, Record<string, { label: string; note: string }>
 
 export default function DetailsForm() {
   const router = useRouter();
-  const {t,value,locale}=useLocale();
+  const {t,value,locale,ready}=useLocale();
   const [input, setInput] = useState<ReturnType<typeof inputDraftStorage.read>>(null);
   const [setup, setSetup] = useState<ReturnType<typeof setupDraftStorage.read>>(null);
   const [loaded, setLoaded] = useState(false);
@@ -35,21 +35,39 @@ export default function DetailsForm() {
   const [otherGender, setOtherGender] = useState("선택 안 함");
   const [otherMbti, setOtherMbti] = useState<MbtiValue>("모름");
   const [friendPresetId, setFriendPresetId] = useState<AiFriendPresetId>("custom");
-  const [friendName, setFriendName] = useState("우사기 친구");
+  const [friendName, setFriendName] = useState("");
   const [friendAge, setFriendAge] = useState("20대 중반");
   const [friendGender, setFriendGender] = useState("선택 안 함");
   const [friendMbti, setFriendMbti] = useState<MbtiValue>("ENTP");
   const [friendPersona, setFriendPersona] = useState(getAiFriendPreset("custom").persona);
   const [showPeopleInfo, setShowPeopleInfo] = useState(false);
   const [showFriendSheet, setShowFriendSheet] = useState(false);
+  const [storageError, setStorageError] = useState("");
 
   useEffect(() => {
+    if (!ready) return;
     const nextInput = inputDraftStorage.read();
     const nextSetup = setupDraftStorage.read();
-    setInput(nextInput); setSetup(nextSetup); setMeSpeaker(nextInput?.meSpeaker ?? ""); setLoaded(true);
-  }, []);
+    if (!nextInput) {
+      router.replace("/analyze");
+      setLoaded(true);
+      return;
+    }
+    if (!nextSetup) {
+      router.replace("/analyze/context");
+      setLoaded(true);
+      return;
+    }
+    setInput(nextInput);
+    setSetup(nextSetup);
+    setMeSpeaker(nextInput.meSpeaker ?? "");
+    setFriendName(t("friendDefault"));
+    setLoaded(true);
+    // Initial draft hydration only. Later locale changes must not reset edited form values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, router]);
 
-  if (!loaded) return <div className="notice">...</div>;
+  if (!loaded) return <div className="notice" role="status">{t("loading")}</div>;
   if (!setup) return <div className="notice">{t("back")}</div>;
 
   const selectFriendPreset = (id: AiFriendPresetId) => {
@@ -62,7 +80,13 @@ export default function DetailsForm() {
 
   const next = () => {
     if (input?.method === "text" && input.participants.length > 1 && !meSpeaker) return;
-    if (input?.method === "text") inputDraftStorage.write({ ...input, meSpeaker });
+    if (input?.method === "text") {
+      const savedInput = inputDraftStorage.write({ ...input, meSpeaker });
+      if (!savedInput.ok) {
+        setStorageError(t("draftStorageFailed"));
+        return;
+      }
+    }
 
     const context: UrIsaiContext = {
       ...setup,
@@ -70,16 +94,24 @@ export default function DetailsForm() {
       other: { ageRange: otherAge, gender: otherGender, mbti: otherMbti },
       aiFriend: { name: friendName.trim() || t("friendDefault"), ageRange: friendAge, gender: friendGender, mbti: friendMbti, presetId: friendPresetId, persona: friendPersona },
     };
-    contextStorage.write(context);
+    const savedContext = contextStorage.write(context);
+    if (!savedContext.ok) {
+      setStorageError(t("draftStorageFailed"));
+      return;
+    }
+    setStorageError("");
     router.push(input?.method === "text" ? "/analyze/processing" : "/analyze/upload");
   };
 
   return <>
+    {storageError && <div className="upload-error" role="alert">{storageError}</div>}
     <div className="guide-inline"><div className="guide-inline-copy"><strong>{t("detailsGuide")}</strong><small>{t("detailsGuideSub")}</small></div></div>
 
     {input?.method === "text" && input.participants.length > 1 && <section className="form-card stack">
-      <SelectField label={t("meWho")} value={meSpeaker} options={["", ...input.participants]} onChange={setMeSpeaker} />
-      {!meSpeaker && <div className="action-help">{t("meWhoHelp")}</div>}
+      <SelectField label={t("meWho")} value={meSpeaker} onChange={setMeSpeaker} required errorText={!meSpeaker ? t("meWhoHelp") : undefined}>
+        <option value="" disabled>{t("meSpeakerPlaceholder")}</option>
+        {input.participants.map((participant) => <option key={participant} value={participant}>{participant}</option>)}
+      </SelectField>
     </section>}
 
     <section className="form-card stack optional-profile-card">
@@ -98,7 +130,7 @@ export default function DetailsForm() {
     <section className="form-card stack friend-settings">
       <div><div className="card-kicker">{t("aiFriendSettings")}</div><h2 className="form-title">{t("chooseFriend")}</h2><p className="form-help">{t("chooseFriendHelp")}</p></div>
       <button type="button" className="selected-friend-summary" onClick={() => setShowFriendSheet(true)}><img src={getAiFriendPreset(friendPresetId).icon} alt="" width={52} height={52}/><span><strong>{presetI18n[locale]?.[friendPresetId]?.label ?? getAiFriendPreset(friendPresetId).label}</strong><small>{presetI18n[locale]?.[friendPresetId]?.note ?? getAiFriendPreset(friendPresetId).note}</small></span><b>›</b></button>
-      <BottomSheet open={showFriendSheet} onClose={() => setShowFriendSheet(false)} title={t("chooseFriend")} description={t("chooseFriendHelp")}><div className="friend-preset-grid" role="list">
+      <BottomSheet open={showFriendSheet} onClose={() => setShowFriendSheet(false)} title={t("chooseFriend")} description={t("chooseFriendHelp")} closeLabel={t("close")}><div className="friend-preset-grid" role="list">
         {AI_FRIEND_PRESETS.map((preset) => <button type="button" role="listitem" aria-pressed={friendPresetId === preset.id} className={`friend-preset-option ${friendPresetId === preset.id ? "selected" : ""}`} onClick={() => {selectFriendPreset(preset.id);setShowFriendSheet(false)}} key={preset.id}>
           <img src={preset.icon} alt="" width={46} height={46}/><span><strong>{(presetI18n[locale]?.[preset.id]?.label ?? preset.label)}{preset.id !== "custom" ? ` · ${preset.mbti}` : ""}</strong><small>{preset.id === "custom" ? t("directFriendTone") : `${value(preset.ageRange)} · ${value(preset.gender)}`}</small>{preset.id !== "custom" && <small className="friend-preset-note">{presetI18n[locale]?.[preset.id]?.note ?? preset.note}</small>}</span>{friendPresetId === preset.id && <span className="friend-preset-check" aria-hidden="true">✓</span>}
         </button>)}

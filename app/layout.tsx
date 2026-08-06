@@ -3,6 +3,7 @@ import "@/styles/tokens.css";
 import "@/styles/layout.css";
 import "@/styles/components.css";
 import "@/styles/interactions.css";
+import "@/styles/accessibility.css";
 import "./globals.css";
 import "@/styles/report.css";
 import LocaleProvider from "@/components/LocaleProvider";

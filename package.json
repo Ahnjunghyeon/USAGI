@@ -1,16 +1,24 @@
 {
   "name": "usagi-phase1",
-  "version": "0.4.4",
+  "version": "0.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "qa": "npm run qa:i18n && npm run typecheck && npm run build",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "qa:syntax": "node scripts/check-syntax.mjs",
+    "qa:imports": "node scripts/check-imports.mjs",
+    "qa:i18n": "node --experimental-strip-types scripts/check-i18n.mjs",
+    "qa:css": "node scripts/check-css.mjs",
+    "qa:a11y": "node scripts/check-a11y.mjs",
+    "qa:assets": "node scripts/check-assets.mjs",
     "qa:legacy": "node scripts/check-legacy.mjs",
-    "prebuild": "npm run qa:legacy",
-    "qa:i18n": "node scripts/check-i18n.mjs"
+    "qa:release": "node scripts/check-release.mjs",
+    "qa:static": "npm run qa:syntax && npm run qa:imports && npm run qa:i18n && npm run qa:css && npm run qa:a11y && npm run qa:assets && npm run qa:legacy && npm run qa:release && npm test",
+    "qa": "npm run qa:static && npm run typecheck && npm run build",
+    "prebuild": "npm run qa:legacy"
   },
   "dependencies": {
     "next": "15.5.18",

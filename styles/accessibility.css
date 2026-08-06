@@ -1,0 +1,7 @@
+/* USAGI v0.5.0 — accessibility and resilient interaction layer */
+:where(button,a,input,select,textarea):focus-visible{outline:3px solid rgba(185,56,89,.28);outline-offset:2px}
+:where(button,a){touch-action:manipulation}
+:where(input,select,textarea){font-size:16px}
+[aria-disabled="true"],:disabled{cursor:not-allowed}
+@media(forced-colors:active){.selected,.filled{outline:2px solid CanvasText}.uds-badge,.uds-card,.form-card{border:1px solid CanvasText}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.uds-toast{animation:none}}

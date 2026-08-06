@@ -1,10 +1,74 @@
 "use client";
+
+import { useCallback, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import Brand from "@/components/Brand";
 import BrandFeature from "@/components/BrandFeature";
 import LanguageSelector from "@/components/LanguageSelector";
 import AiPolicyGate from "@/components/AiPolicyGate";
-import { useLocale } from "@/components/LocaleProvider";
-import { contextStorage, inputDraftStorage, resultStorage, uploadStorage } from "@/lib/client/storage";
+import Toast from "@/components/ui/Toast";
 import NaturalText from "@/components/ui/NaturalText";
-export default function HomePage(){const {t}=useLocale();return <main className="shell"><div className="mobile-frame"><div className="home-brand-row"><Brand hero/><LanguageSelector/></div><section className="home-intro"><AiPolicyGate/><div className="eyebrow">{t("homeEyebrow")}</div><h1 className="hero-title"><NaturalText as="span">{t("homeTitle")}</NaturalText><NaturalText as="strong">{t("homeTitleStrong")}</NaturalText></h1><p className="hero-copy">{t("homeCopy")}</p><div className="hero-card"><ButtonLink href="/analyze" variant="primary" fullWidth>{t("homeCta")}</ButtonLink><div className="privacy"><span>🔒</span><span>{t("homePrivacy")}</span></div><div className="home-policy-actions"><ButtonLink href="/policy" variant="ghost" size="sm">{t("serviceNotice")}</ButtonLink><button type="button" className="text-action" onClick={()=>{contextStorage.clear?.();inputDraftStorage.clear();uploadStorage.clear();resultStorage.clear();window.alert(t("dataCleared"));}}>{t("clearData")}</button></div></div><div className="brand-principles"><div><BrandFeature variant="stealth"/><strong>{t("stealthTitle")}</strong><span>{t("stealthDesc")}</span></div><div><BrandFeature variant="data"/><strong>{t("dataTitle")}</strong><span>{t("dataDesc")}</span></div><div><BrandFeature variant="relation"/><strong>{t("relationTitle")}</strong><span>{t("relationDesc")}</span></div></div><div className="chips"><span className="chip">KakaoTalk</span><span className="chip">Instagram DM</span><span className="chip">SMS</span><span className="chip">Telegram</span></div><div className="demo-banner"><strong>{t("demoTitle")}</strong><p>{t("demoQuote")}</p><span>{t("demoNote")}</span></div></section></div></main>}
+import { useLocale } from "@/components/LocaleProvider";
+import { contextStorage, inputDraftStorage, resultStorage } from "@/lib/client/storage";
+import { setupDraftStorage } from "@/lib/client/setup-storage";
+import { imageDraftStore } from "@/lib/client/image-draft-store";
+
+export default function HomePage() {
+  const { t } = useLocale();
+  const [toast, setToast] = useState("");
+  const dismissToast = useCallback(() => setToast(""), []);
+
+  const clearData = async () => {
+    contextStorage.clear();
+    inputDraftStorage.clear();
+    setupDraftStorage.clear();
+    resultStorage.clear();
+    await imageDraftStore.clearAll();
+    setToast(t("dataCleared"));
+  };
+
+  return (
+    <main className="shell">
+      <div className="mobile-frame">
+        <div className="home-brand-row"><Brand hero /><LanguageSelector /></div>
+        <section className="home-intro">
+          <AiPolicyGate />
+          <div className="eyebrow">{t("homeEyebrow")}</div>
+          <h1 className="hero-title">
+            <NaturalText as="span">{t("homeTitle")}</NaturalText>
+            <NaturalText as="strong">{t("homeTitleStrong")}</NaturalText>
+          </h1>
+          <p className="hero-copy">{t("homeCopy")}</p>
+
+          <div className="hero-card">
+            <ButtonLink href="/analyze" variant="primary" fullWidth>{t("homeCta")}</ButtonLink>
+            <div className="privacy"><span aria-hidden="true">🔒</span><span>{t("homePrivacy")}</span></div>
+            <div className="home-policy-actions">
+              <ButtonLink href="/policy" variant="ghost" size="sm">{t("serviceNotice")}</ButtonLink>
+              <button type="button" className="text-action" onClick={() => void clearData()}>{t("clearData")}</button>
+            </div>
+          </div>
+
+          <div className="brand-principles">
+            <div><BrandFeature variant="stealth" /><strong>{t("stealthTitle")}</strong><span>{t("stealthDesc")}</span></div>
+            <div><BrandFeature variant="data" /><strong>{t("dataTitle")}</strong><span>{t("dataDesc")}</span></div>
+            <div><BrandFeature variant="relation" /><strong>{t("relationTitle")}</strong><span>{t("relationDesc")}</span></div>
+          </div>
+
+          <div className="chips" aria-label={t("inputAria")}>
+            <span className="chip">{t("supportedTextKakao")}</span>
+            <span className="chip">{t("supportedTextScreenshot")}</span>
+            <span className="chip">{t("supportedTextGeneric")}</span>
+          </div>
+
+          <div className="demo-banner">
+            <strong>{t("demoTitle")}</strong>
+            <p>{t("demoQuote")}</p>
+            <span>{t("demoNote")}</span>
+          </div>
+        </section>
+      </div>
+      <Toast message={toast} onDismiss={dismissToast} />
+    </main>
+  );
+}

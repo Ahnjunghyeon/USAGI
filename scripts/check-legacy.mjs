@@ -10,6 +10,10 @@ const forbidden = [
   "lib/client/preflight.ts",
   "lib/conversation/dataset.ts",
   "lib/conversation/types.ts",
+  "lib/conversation-parser.ts",
+  "lib/friend.ts",
+  "public/temp",
+  "public/ai-friends/temp",
 ];
 
 const found = forbidden.filter(existsSync);

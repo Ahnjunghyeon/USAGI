@@ -16,7 +16,7 @@ export default function ResultHeader({ tags, meta, title, summary }: ResultHeade
       <AiResultBadge />
 
       <div className="result-context-panel">
-        <div className="result-tag-row" aria-label="분석 조건">
+        <div className="result-tag-row">
           {tags.filter(Boolean).map((tag) => <Badge key={tag}>{tag}</Badge>)}
         </div>
         <p className="result-meta">{meta}</p>

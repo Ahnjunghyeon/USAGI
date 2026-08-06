@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 
-const ANALYSIS_TTL_SECONDS = Number(process.env.USAGI_ANALYSIS_CACHE_TTL_SECONDS || 600);
-const DATASET_TTL_SECONDS = Number(process.env.USAGI_DATASET_CACHE_TTL_SECONDS || 1800);
+function positiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : fallback;
+}
+
+const ANALYSIS_TTL_SECONDS = positiveInt(process.env.USAGI_ANALYSIS_CACHE_TTL_SECONDS, 600);
 const memoryCache = new Map<string, { expiresAt: number; result: unknown }>();
 
 function hasUpstash() {
@@ -40,10 +44,6 @@ export function buildAnalysisFingerprint(clientKey: string, payload: unknown) {
   return createHash("sha256").update(clientKey).update("\nanalysis\n").update(JSON.stringify(payload)).digest("hex");
 }
 
-export function buildImageFingerprint(clientKey: string, images: string[]) {
-  return createHash("sha256").update(clientKey).update("\nimage-dataset\n").update(JSON.stringify(images)).digest("hex");
-}
-
 export async function getCachedAnalysis<T>(fingerprint: string): Promise<T | null> {
   const key = `result:${fingerprint}`;
   if (hasUpstash()) {
@@ -69,35 +69,6 @@ export async function waitForCachedAnalysis<T>(fingerprint: string, waitMs = 450
     const result = await getCachedAnalysis<T>(fingerprint);
     if (result) return result;
     await new Promise((resolve) => setTimeout(resolve, 350));
-  }
-  return null;
-}
-
-export async function getCachedDataset<T>(fingerprint: string): Promise<T | null> {
-  const key = `dataset:${fingerprint}`;
-  if (hasUpstash()) {
-    try {
-      const response = await upstash(["GET", `usagi:${key}`]);
-      if (typeof response?.result === "string") return JSON.parse(response.result) as T;
-    } catch (error) { console.error("[usagi/dataset-cache] read failed", error); }
-  }
-  return readMemory<T>(key);
-}
-
-export async function setCachedDataset(fingerprint: string, result: unknown) {
-  const key = `dataset:${fingerprint}`;
-  writeMemory(key, result, DATASET_TTL_SECONDS);
-  if (!hasUpstash()) return;
-  try { await upstash(["SET", `usagi:${key}`, JSON.stringify(result), "EX", DATASET_TTL_SECONDS]); }
-  catch (error) { console.error("[usagi/dataset-cache] write failed", error); }
-}
-
-export async function waitForCachedDataset<T>(fingerprint: string, waitMs = 6500): Promise<T | null> {
-  const deadline = Date.now() + waitMs;
-  while (Date.now() < deadline) {
-    const result = await getCachedDataset<T>(fingerprint);
-    if (result) return result;
-    await new Promise((resolve) => setTimeout(resolve, 300));
   }
   return null;
 }

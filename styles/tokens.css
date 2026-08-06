@@ -5,7 +5,7 @@
   --uds-color-text:#191f28;
   --uds-color-text-secondary:#59636f;
   --uds-color-border:#e5e8eb;
-  --uds-color-primary:#ff6f8f;
+  --uds-color-primary:#b93859;
   --uds-color-primary-soft:#fff1f4;
   --uds-color-success:#17b26a;
   --uds-color-success-soft:#eafbf2;
@@ -31,5 +31,5 @@
   --uds-shadow-sheet:0 24px 80px rgba(15,23,42,.18);
   --uds-page-inline:20px;
   --uds-control-height:52px;
-  --uds-focus-ring:0 0 0 3px rgba(255,111,143,.2);
+  --uds-focus-ring:0 0 0 3px rgba(185,56,89,.24);
 }
